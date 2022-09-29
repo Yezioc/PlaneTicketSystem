@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kuaiyibu.mapper.UserMapper">
+
+<resultMap id="userMap" type="user">
+    <id property="uid" column="uid"/>
+    <result property="userName" column="user_name"/>
+    <result property="titleName" column="title_name"/>
+    <result property="password" column="password"/>
+    <result property="sex" column="sex"/>
+    <result property="phone" column="phone"/>
+    <result property="birthday" column="birthday"/>
+    <result property="email" column="email"/>
+</resultMap>
+
+    <select id="dySelect" resultMap="userMap" parameterType="user">
+        select * from tb_user where 1=1
+        <if test="userName!=''">and user_name like '%${userName}%' </if>
+
+        <if test="titleName!=''">and title_name like '%${titleName}%' </if>
+
+        <if test="password!=''">and password like '%${password}%' </if>
+
+        <if test="sex!=''">and sex like '%${sex}%' </if>
+
+        <if test="phone!=''">and phone like '%${phone}%' </if>
+
+        <if test="birthday!=''">and convert(birthday,DATETIME) like '${birthday}%' </if>
+
+        <if test="email!=''">and email=#{email} </if>
+
+</select>
+
+</mapper>

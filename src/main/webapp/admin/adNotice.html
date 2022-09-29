@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>快一步航班管理系统</title>
+    <link rel="icon" href="../img/logo.ico" type="image/x-icon">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        a {
+            color: #409eff;
+            text-decoration: none;
+        }
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+        .el-main {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+        <!--头部-->
+        <el-header>
+            <p style="margin: 0;font-weight: bold;font-size: 25px">
+                快一步航班管理系统
+                <el-link type="primary" :underline="false" href="/PlaneTicket/admin">
+                    切换权限
+                </el-link>
+            </p>
+        </el-header>
+
+        <!--导航栏-->
+        <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-menu-item index="adTicket.html">航班管理</el-menu-item>
+            <el-menu-item index="adOrder.html">订单管理</el-menu-item>
+            <el-menu-item index="adSeat.html">座位管理</el-menu-item>
+            <el-menu-item index="adUser.html">用户管理</el-menu-item>
+            <el-menu-item index="adPassenger.html">乘机人管理</el-menu-item>
+            <el-menu-item index="adNotice.html">公告管理</el-menu-item>
+            <el-menu-item index="adAdvice.html">建议管理</el-menu-item>
+        </el-menu>
+
+        <!--tab-->
+        <el-tabs v-model="activeName" :tab-position="tabPosition" @tab-click="handleClick">
+
+            <!--第一页-->
+            <el-tab-pane name="first">
+                <el-tooltip slot="label" class="item" effect="dark" content="主页" placement="right" :open-delay="500">
+                    <i class="el-icon-house"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--条件查询-->
+                    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+
+                        <el-form-item label="标题">
+                            <el-input clearable v-model="formInline.title" placeholder="标题"></el-input>
+                        </el-form-item>
+                        <el-form-item label="内容">
+                            <el-input clearable v-model="formInline.content" placeholder="内容"></el-input>
+                        </el-form-item>
+                        <el-form-item label="选择日期">
+                            <el-input clearable v-model="formInline.time" placeholder="选择日期"></el-input>
+                        </el-form-item>
+
+                        <el-form-item >
+                            <el-button type="primary" plain icon="el-icon-refresh-right" @click="clear">重置</el-button>
+                            <el-button type="primary" @click="selectByCondition()" icon="el-icon-search">查询</el-button>
+                        </el-form-item>
+
+                    </el-form>
+
+                    <!--操作按钮-->
+                    <el-row>
+                        <el-button type="success" plain round icon="el-icon-plus" @click="dialogVisibleAdd = true">添加</el-button>
+                    </el-row>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                prop="title"
+                                label="标题"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="content"
+                                label="内容"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="time"
+                                label="时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                align="center"
+                                label="操作">
+
+                            <template slot-scope="scope">
+
+                                <el-button type="primary" icon="el-icon-edit" circle size="medium" @click="selectById(scope.row)"></el-button>
+                                <el-button type="danger" icon="el-icon-delete" circle size="medium" @click="toDelete(scope.row)"></el-button>
+
+                            </template>
+
+
+
+                        </el-table-column>
+                    </el-table>
+
+
+
+                    <el-row>
+                        <el-col :span="24"><div class="grid-content bg-purple-dark"></div></el-col>
+                    </el-row>
+
+                </el-main>
+
+            </el-tab-pane>
+
+            <!--第二页-->
+            <el-tab-pane name="second">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量添加" placement="right" :open-delay="500">
+                    <i class="el-icon-plus"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+            <!--第三页-->
+            <el-tab-pane name="third">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量删除" placement="right" :open-delay="500">
+                    <i class="el-icon-delete"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+            <!--第四页-->
+            <el-tab-pane name="fourth">
+                <el-tooltip slot="label" class="item" effect="dark" content="高级设置" placement="right" :open-delay="500">
+                    <i class="el-icon-setting"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+        </el-tabs>
+
+
+        <!--添加弹窗-->
+        <el-dialog
+                title="添加"
+                :visible.sync="dialogVisibleAdd"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="form" :model="formAdd" :label-position="labelPosition" label-width="80px">
+
+                <el-form-item label="标题">
+                    <el-input clearable v-model="formAdd.title"></el-input>
+                </el-form-item>
+
+                <el-form-item label="内容">
+                    <el-input
+                            clearable
+                            type="textarea"
+                            :rows="2"
+                            placeholder="请输入内容"
+                            v-model="formAdd.content">
+                    </el-input>
+                </el-form-item>
+
+                <el-form-item label="时间">
+                    <el-date-picker
+                            v-model="formAdd.time"
+                            type="datetime"
+                            value-format="yyyy-MM-dd HH:mm:ss"
+                            placeholder="选择日期时间">
+                    </el-date-picker>
+                </el-form-item>
+
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleAdd = false">取 消</el-button>
+                    <el-button type="primary" @click="add">提 交</el-button>
+            </span>
+
+        </el-dialog>
+
+
+        <!--修改弹窗-->
+        <el-dialog
+                title="修改"
+                :visible.sync="dialogVisibleEdit"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="form" :model="formEdit" :label-position="labelPosition" label-width="80px">
+
+                <el-form-item label="标题">
+                    <el-input clearable v-model="formEdit.title"></el-input>
+                </el-form-item>
+
+                <el-form-item label="内容">
+                    <el-input
+                            clearable
+                            type="textarea"
+                            :rows="2"
+                            placeholder="请输入内容"
+                            v-model="formEdit.content">
+                    </el-input>
+                </el-form-item>
+
+                <el-form-item label="时间">
+                    <el-date-picker
+                            v-model="formEdit.time"
+                            type="datetime"
+                            value-format="yyyy-MM-dd HH:mm:ss"
+                            placeholder="选择日期时间">
+                    </el-date-picker>
+                </el-form-item>
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleEdit = false">取 消</el-button>
+                    <el-button type="primary" @click="update">确 定</el-button>
+            </span>
+
+        </el-dialog>
+
+    </div>
+</div>
+
+<script src="../js/axios-0.18.0.js"></script>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+<script>
+  new Vue({
+    el:"#app",
+    data:{
+        // tab默认选择
+        activeName: 'first',
+        // tab位置
+        tabPosition: 'left',
+        // 导航栏默认选择
+        activeIndex: 'adNotice.html',
+        // 分页的
+        currentPage: 1,
+        // 添加弹窗状态
+        dialogVisibleAdd: false,
+        // 编辑弹窗状态
+        dialogVisibleEdit: false,
+        // 表格数据
+        tableData: [
+        ],
+        // 条件查询数据
+        formInline: {
+            title: '',
+            content:'',
+            time: ''
+        },
+        // 添加弹窗数据
+        formAdd: {
+            nid:'',
+            title:'',
+            content:'',
+            time:''
+        },
+        // 修改弹窗数据
+        formEdit: {
+            nid:'',
+            title:'',
+            content:'',
+            time:''
+        },
+        // 添加弹窗的表单对齐方式
+        labelPosition:'right'
+    },
+    created(){
+        this.getAll();
+    },
+    methods:{
+        getAll() {
+            axios.get("/PlaneTicket/admin/notices").then((res)=>{
+               this.tableData = res.data;
+            });
+        },
+        add(){
+            if(this.formAdd.title != null && this.formAdd.title != ''){
+                if(this.formAdd.time == '' || this.formAdd.time == 'undefine' || this.formAdd.time == null){//2022-06-11 15:18:58
+                    let now = new Date();
+                    this.formAdd.time = now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate()+' '+now.getHours()+':'+now.getMinutes()+':'+now.getSeconds();
+                }
+                axios.post("/PlaneTicket/admin/notices",this.formAdd).then((res)=>{
+                    if(res.data == true){
+                        this.$message({
+                            message: '恭喜你，添加成功!',
+                            type: 'success'
+                        });
+                        this.dialogVisibleAdd = false;
+                        this.formAdd = {
+                            nid:'',
+                            title:'',
+                            content:'',
+                            time:''
+                        };
+                    }else {
+                        this.$message.error('不好意思，添加失败了哦!');
+                    }
+                }).finally(()=>{
+                    this.getAll();
+                });
+            }else {
+                this.$message.error('不好意思，标题不能为空哦!');
+            }
+
+        },
+        update(){
+            if(this.formEdit.title != null && this.formEdit.title != ''){
+                if(this.formEdit.time == '' || this.formEdit.time == 'undefine' || this.formEdit.time == null){
+                    this.$message.error('不好意思，时间不能为空哦!');
+                }else {
+                    axios.put("/PlaneTicket/admin/notices",this.formEdit).then((res)=>{
+                        if(res.data == true){
+                            this.$message({
+                                message: '恭喜你，修改成功!',
+                                type: 'success'
+                            });
+                        }else {
+                            this.$message.error('不好意思，修改失败了哦!');
+                        }
+                    }).finally(()=>{
+                        this.dialogVisibleEdit = false;
+                        this.getAll();
+                    });
+                }
+            }else {
+                this.$message.error('不好意思，标题不能为空哦!');
+            }
+
+        },
+        selectById(row){
+            axios.get("/PlaneTicket/admin/notices/"+row.nid).then((res)=>{
+                this.formEdit = res.data;
+                this.dialogVisibleEdit = true;
+            });
+        },
+        selectByCondition(){
+            axios.get("/PlaneTicket/admin/notices/dySelect?title="+this.formInline.title+"&content="+this.formInline.content+"&time="+this.formInline.time).then((res)=>{
+                this.tableData = res.data;
+            });
+        },
+        toDelete(row){
+            this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                axios.delete("/PlaneTicket/admin/notices/" + row.nid ).then((res)=>{
+                    if(res.data == true){
+                        this.$message({
+                            message: '恭喜你，删除成功!',
+                            type: 'success'
+                        });
+                    }else {
+                        this.$message.error('不好意思，删除失败了哦!');
+                    }
+                }).finally(()=>{
+                    this.dialogVisibleEdit = false;
+                    this.getAll();
+                });
+            }).catch(() => {
+                this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            });
+
+        },
+        // tab的点击事件
+        handleClick(tab, event) {
+            console.log(tab, event);
+        },
+        // 表格的批量选择
+        handleSelectionChange(val) {
+            this.multipleSelection = val;
+        },
+        // 条件查询提交按钮
+        onSubmit() {
+            console.log('submit!');
+        },
+        // 导航栏的选择事件
+        handleSelect(routePath) {
+            location.href = routePath;
+        },
+        // 添加弹窗关闭事件
+        handleClose(done) {
+            done();
+        },
+        // 分页的
+        handleSizeChange(val) {
+            console.log(`每页 ${val} 条`);
+        },
+        handleCurrentChange(val) {
+            console.log(`当前页: ${val}`);
+        },
+        //清空方法
+        clear(){
+            this.formInline = {
+                title: '',
+                content:'',
+                time: ''
+            };
+        },
+    }
+  })
+</script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>快一步航班管理系统</title>
+    <link rel="icon" href="../img/logo.ico" type="image/x-icon">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        a {
+            color: #409eff;
+            text-decoration: none;
+        }
+
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-main {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+        <!--头部-->
+        <el-header>
+            <p style="margin: 0;font-weight: bold;font-size: 25px">
+                快一步航班管理系统
+                <el-link type="primary" :underline="false" href="/PlaneTicket/admin">
+                    切换权限
+                </el-link>
+            </p>
+        </el-header>
+
+        <!--导航栏-->
+        <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-menu-item index="adTicket.html">航班管理</el-menu-item>
+            <el-menu-item index="adOrder.html">订单管理</el-menu-item>
+            <el-menu-item index="adSeat.html">座位管理</el-menu-item>
+            <el-menu-item index="adUser.html">用户管理</el-menu-item>
+            <el-menu-item index="adPassenger.html">乘机人管理</el-menu-item>
+            <el-menu-item index="adNotice.html">公告管理</el-menu-item>
+            <el-menu-item index="adAdvice.html">建议管理</el-menu-item>
+        </el-menu>
+
+        <!--一个main-->
+        <el-main>
+
+            <!--条件查询-->
+            <el-form :inline="true" :model="formSelect" class="demo-form-inline">
+
+                <el-form-item label="订单编号">
+                    <el-input placeholder="订单编号" v-model="formSelect.onum"></el-input>
+                </el-form-item>
+
+                <el-form-item label="下单时间">
+                    <el-input placeholder="下单时间" v-model="formSelect.time"></el-input>
+                </el-form-item>
+
+                <el-form-item label="班次">
+                    <el-input placeholder="班次" v-model="formSelect.ticket.shift"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出发日期">
+                    <el-input placeholder="出发日期" v-model="formSelect.ticket.date"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出发城市">
+                    <el-input placeholder="出发城市" v-model="formSelect.ticket.origin"></el-input>
+                </el-form-item>
+
+                <el-form-item label="到达城市">
+                    <el-input placeholder="到达城市" v-model="formSelect.ticket.end"></el-input>
+                </el-form-item>
+
+                <el-form-item>
+                    <div style="display:flex;align-items: center">
+                        <el-button type="primary" plain icon="el-icon-refresh-right" @click="Reset">重置</el-button>
+                        <el-button type="primary" icon="el-icon-search" @click="selectByCondition">查询</el-button>
+
+                        <el-checkbox v-model="formSelect.state" label="已取消" style="margin-left: 30px;margin-right: 15px"></el-checkbox>
+                        <el-checkbox v-model="formSelect.state" label="已购买" style="margin-right: 15px"></el-checkbox>
+
+                        <el-checkbox v-model="formSelect.payState" label="已支付" style="margin-right: 15px"></el-checkbox>
+                        <el-checkbox v-model="formSelect.payState" label="未支付"></el-checkbox>
+                    </div>
+                </el-form-item>
+
+
+            </el-form>
+
+            <!--表格-->
+            <el-table
+                    :data="tableData"
+                    stripe
+                    style="width: 100%"
+                    @selection-change="handleSelectionChange">
+                <el-table-column
+                        type="index"
+                        width="50"
+                        align="center">
+                </el-table-column>
+                <el-table-column
+                        prop="onum"
+                        label="订单编号"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="time"
+                        label="下单时间"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="ticket.shift"
+                        label="班次"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="ticket.date"
+                        label="出发日期"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="ticket.origin"
+                        label="出发城市"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="ticket.end"
+                        label="到达城市"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="ouid"
+                        label="用户"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="passenger.psName"
+                        label="乘机人"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="payState"
+                        label="支付状态"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        prop="state"
+                        label="订单状态"
+                        sortable>
+                </el-table-column>
+                <el-table-column
+                        align="center"
+                        label="操作">
+                    <template slot-scope="scope">
+
+                        <el-button type="primary" icon="el-icon-edit" circle size="medium"
+                                   @click="selectSid(scope.row)"></el-button>
+
+                    </template>
+
+                </el-table-column>
+            </el-table>
+
+
+
+        </el-main>
+
+        <!--添加弹窗-->
+        <el-dialog
+                title="添加"
+                :visible.sync="dialogVisibleAdd"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="form" :model="formAdd" :label-position="labelPosition" label-width="80px">
+
+                <el-form-item label="活动名称">
+                    <el-input v-model="formAdd.name"></el-input>
+                </el-form-item>
+
+                <el-form-item label="名称">
+                    <el-input v-model="formAdd.name"></el-input>
+                </el-form-item>
+
+                <el-form-item label="活动">
+                    <el-input v-model="formAdd.name"></el-input>
+                </el-form-item>
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleAdd = false">取 消</el-button>
+                    <el-button type="primary" @click="dialogVisibleAdd = false">确 定</el-button>
+            </span>
+
+        </el-dialog>
+
+
+        <!--编辑弹窗-->
+        <el-dialog
+                title="编辑"
+                :visible.sync="dialogVisibleEdit"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="formEdit" :model="formEdit" :label-position="labelPosition" label-width="80px" :rules="rules">
+
+                <el-form-item label="支付状态" prop="payState">
+                    <el-input v-model="formEdit.payState" placeholder="已支付/未支付"></el-input>
+                </el-form-item>
+
+                <el-form-item label="订单状态" prop="state">
+                    <el-input v-model="formEdit.state" placeholder="初始/已取消/已购买"></el-input>
+                </el-form-item>
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleEdit = false">取 消</el-button>
+                    <el-button type="primary" @click="upEdit('formEdit')">确 定</el-button>
+            </span>
+
+        </el-dialog>
+
+    </div>
+</div>
+
+<script src="../js/axios-0.18.0.js"></script>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+
+            formSelect: {
+                //复选框
+                state: [],
+                payState: [],
+                ticket: {}
+            },
+            // tab默认选择
+            activeName: 'first',
+            // tab位置
+            tabPosition: 'left',
+            // 导航栏默认选择
+            activeIndex: 'adOrder.html',
+            // 分页的
+            currentPage: 4,
+            // 添加弹窗状态
+            dialogVisibleAdd: false,
+            // 编辑弹窗状态
+            dialogVisibleEdit: false,
+            // 表格数据
+            tableData: [],
+            // 条件查询数据
+            formInline: {
+                user: '',
+                region: ''
+            },
+            // 添加弹窗数据
+            formAdd: {
+                name: '',
+                region: '',
+                date1: '',
+                date2: '',
+                delivery: false,
+                type: [],
+                resource: '',
+                desc: ''
+            },
+            rules: {
+                payState: [
+                    {required: true, message: '请输入支付状态', trigger: 'blur'},
+                    {pattern: /[已支付]|[未支付]/, message: "输入格式错误", trigger: "blur"},
+                ],
+                state: [
+                    {required: true, message: '请输入订单状态', trigger: 'blur'},
+                    {pattern: /[初始]|[已取消]|[已购买]/, message: "输入格式错误", trigger: "blur"},
+                ],
+            },
+            // 编辑弹窗数据
+            formEdit: {
+                payState: '',
+                state: ''
+            },
+            // 添加弹窗的表单对齐方式
+            labelPosition: 'right'
+        },
+        created() {
+            this.getAll()
+        },
+        methods: {
+            selectByCondition() {
+                console.log(this.formSelect)
+                if(this.formSelect.state.length == 1){
+                    this.formSelect.state = this.formSelect.state[0];
+                }else{
+                    this.formSelect.state = ''
+                }
+                if(this.formSelect.payState.length == 1){
+                    this.formSelect.payState = this.formSelect.payState[0];
+                }else{
+                    this.formSelect.payState = ''
+                }
+                axios.get('/PlaneTicket/admin/orders', {
+                    params: this.formSelect,
+                }).then((res) => {
+                    this.tableData = res.data;
+                }).finally(()=>{
+                    this.formSelect.state = [];
+                    this.formSelect.payState = [];
+                });
+            },
+
+            selectSid(row) {
+                axios.get('/PlaneTicket/admin/orders/' + row.oid).then((res) => {
+                    this.formEdit = res.data;
+                    this.dialogVisibleEdit = true;
+                });
+            },
+
+            upEdit(form) {
+                this.$refs[form].validate((valid) => {
+                    if (valid == true) {
+                        axios.put('/PlaneTicket/admin/orders/' + this.formEdit.oid + '/' + this.formEdit.payState + '/' + this.formEdit.state).then((res) => {
+                            if (res.data) {
+                                this.$message({
+                                    message: '恭喜你，修改成功！',
+                                    type: 'success'
+                                });
+                                this.dialogVisibleEdit = false;
+                            } else {
+                                this.$message.error('不好意思，修改失败！');
+                            }
+                        }).finally(() => {
+                            this.getAll();
+                        });
+                    }
+                    ;
+                });
+
+            },
+
+            getAll() {
+                axios.get('/PlaneTicket/admin/orders/ad').then((res) => {
+                    console.log(res.data)
+                    this.tableData = res.data;
+                });
+            },
+            // tab的点击事件
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            // 表格的批量选择
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            // 条件查询提交按钮
+            onSubmit() {
+                console.log('submit!');
+            },
+            // 导航栏的选择事件
+            handleSelect(routePath) {
+                location.href = routePath;
+            },
+            Reset() {
+
+            },
+            // 添加弹窗关闭事件
+            handleClose(done) {
+                done();
+            },
+            // 分页的
+            handleSizeChange(val) {
+                console.log(`每页 ${val} 条`);
+            },
+            handleCurrentChange(val) {
+                console.log(`当前页: ${val}`);
+            }
+        }
+    })
+</script>
+</body>
+</html>

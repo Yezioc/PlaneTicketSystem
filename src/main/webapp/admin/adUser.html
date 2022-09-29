@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>快一步航班管理系统</title>
+    <link rel="icon" href="../img/logo.ico" type="image/x-icon">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        a {
+            color: #409eff;
+            text-decoration: none;
+        }
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+        .el-main {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+        <!--头部-->
+        <el-header>
+            <p style="margin: 0;font-weight: bold;font-size: 25px">
+                快一步航班管理系统
+                <el-link type="primary" :underline="false" href="/PlaneTicket/admin">
+                    切换权限
+                </el-link>
+            </p>
+        </el-header>
+
+        <!--导航栏-->
+        <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-menu-item index="adTicket.html">航班管理</el-menu-item>
+            <el-menu-item index="adOrder.html">订单管理</el-menu-item>
+            <el-menu-item index="adSeat.html">座位管理</el-menu-item>
+            <el-menu-item index="adUser.html">用户管理</el-menu-item>
+            <el-menu-item index="adPassenger.html">乘机人管理</el-menu-item>
+            <el-menu-item index="adNotice.html">公告管理</el-menu-item>
+            <el-menu-item index="adAdvice.html">建议管理</el-menu-item>
+        </el-menu>
+
+        <!--tab-->
+        <el-tabs v-model="activeName" :tab-position="tabPosition" @tab-click="handleClick">
+
+            <!--第一页-->
+            <el-tab-pane name="first">
+                <el-tooltip slot="label" class="item" effect="dark" content="主页" placement="right" :open-delay="500">
+                    <i class="el-icon-house"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--条件查询-->
+                    <el-form :inline="true" ref="formInline" :model="formInline" class="demo-form-inline" :rules="userFormrulesmohu">
+
+                        <el-form-item label="用户名" prop="userName">
+                            <el-input v-model="formInline.userName" placeholder="用户名"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="姓名" prop="titleName">
+                            <el-input v-model="formInline.titleName" placeholder="姓名"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="性别" prop="sex">
+                            <el-select v-model="formInline.sex" placeholder="性别">
+                                <el-option label="男" value="男"></el-option>
+                                <el-option label="女" value="女"></el-option>
+                            </el-select>
+                        </el-form-item>
+
+                        <el-form-item label="电话号码" prop="phone">
+                            <el-input v-model="formInline.phone" placeholder="电话号码"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="出生日期" prop="birthday">
+                            <el-input type="date" v-model="formInline.birthday" placeholder="选择日期"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="邮箱" prop="email">
+                            <el-input v-model="formInline.email" placeholder="邮箱"></el-input>
+                        </el-form-item>
+
+                        <el-form-item>
+                            <el-button type="primary" plain icon="el-icon-refresh-right" @click="Reset">重置</el-button>
+                            <el-button type="primary" @click="mohuchax('formInline')" icon="el-icon-search">查询</el-button>
+                        </el-form-item>
+
+                    </el-form>
+
+                    <!--操作按钮-->
+                    <el-row>
+                        <el-button type="success" plain round icon="el-icon-plus" @click="dialogVisibleAdd = true">添加</el-button>
+                    </el-row>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                prop="userName"
+                                label="用户名"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="titleName"
+                                label="姓名"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="password"
+                                label="密码"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                prop="sex"
+                                label="性别"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                prop="phone"
+                                label="电话号码"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                prop="birthday"
+                                label="出生日期"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                prop="email"
+                                label="邮箱"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                label="操作">
+                    <!--加了这个标签，slot-scope属性然后在按钮调用就能获取当前行的数据                            -->
+                            <template slot-scope="scope">
+                                <el-button type="primary" icon="el-icon-edit" circle size="medium" @click="dialogVisibleEdit = true,Edit(scope.row)" ></el-button>
+                                <el-button type="danger" icon="el-icon-delete" circle size="medium" @click="deleteUser(scope.row)"></el-button>
+                            </template>
+
+                        </el-table-column>
+                    </el-table>
+
+                    <!--分页-->
+
+
+<!--                    <el-row>-->
+<!--                        <el-col :span="24"><div class="grid-content bg-purple-dark"></div></el-col>-->
+<!--                    </el-row>-->
+
+                </el-main>
+
+            </el-tab-pane>
+
+            <!--第二页-->
+            <el-tab-pane name="second">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量添加" placement="right" :open-delay="500">
+                    <i class="el-icon-plus"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+            <!--第三页-->
+            <el-tab-pane name="third">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量删除" placement="right" :open-delay="500">
+                    <i class="el-icon-delete"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+            <!--第四页-->
+            <el-tab-pane name="fourth">
+                <el-tooltip slot="label" class="item" effect="dark" content="高级设置" placement="right" :open-delay="500">
+                    <i class="el-icon-setting"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+        </el-tabs>
+
+        <!--添加弹窗-->
+        <el-dialog
+                title="添加"
+                :visible.sync="dialogVisibleAdd"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="formAdd" :model="formAdd" :label-position="labelPosition" label-width="80px" :rules="userFormrules">
+
+                <el-form-item label="用户名" prop="userName">
+                    <el-input v-model="formAdd.userName"></el-input>
+                </el-form-item>
+
+                <el-form-item label="姓名" prop="titleName">
+                    <el-input v-model="formAdd.titleName"></el-input>
+                </el-form-item>
+
+                <el-form-item label="密码" prop="password">
+                    <el-input v-model="formAdd.password"></el-input>
+                </el-form-item>
+
+                <el-form-item label="性别" prop="sex">
+                    <el-select v-model="formAdd.sex" placeholder="性别">
+                        <el-option label="男" value="男"></el-option>
+                        <el-option label="女" value="女"></el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="电话号码" prop="phone">
+                    <el-input v-model="formAdd.phone"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出生日期" prop="birthday">
+                    <el-input type="date" v-model="formAdd.birthday"></el-input>
+                </el-form-item>
+
+                <el-form-item label="邮箱" prop="email">
+                    <el-input v-model="formAdd.email"></el-input>
+                </el-form-item>
+
+            </el-form>
+            <!--添加的按钮------------------->
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleAdd = false">取 消</el-button>
+                    <el-button type="primary" @click="addUser('formAdd')">确 定</el-button>
+            </span>
+
+        </el-dialog>
+
+
+        <!--编辑弹窗-->
+        <el-dialog
+                title="编辑"
+                :visible.sync="dialogVisibleEdit"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="formEdit" :model="formEdit" :label-position="labelPosition" label-width="80px" :rules="userFormrules">
+
+                <el-form-item label="用户名" prop="userName">
+                    <el-input v-model="formEdit.userName"></el-input>
+                </el-form-item>
+
+                <el-form-item label="姓名" prop="titleName">
+                    <el-input v-model="formEdit.titleName"></el-input>
+                </el-form-item>
+
+                <el-form-item label="密码" prop="password">
+                    <el-input v-model="formEdit.password"></el-input>
+                </el-form-item>
+
+                <el-form-item label="性别" prop="sex">
+                    <el-select v-model="formEdit.sex" placeholder="性别">
+                        <el-option label="男" value="男"></el-option>
+                        <el-option label="女" value="女"></el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="电话号码" prop="phone">
+                    <el-input v-model="formEdit.phone"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出生日期" prop="birthday">
+                    <el-input type="date" v-model="formEdit.birthday"></el-input>
+                </el-form-item>
+
+                <el-form-item label="邮箱" prop="email">
+                    <el-input v-model="formEdit.email"></el-input>
+                </el-form-item>
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer" >
+                    <el-button @click="dialogVisibleEdit = false,Userselect()">取 消</el-button>
+                    <el-button type="primary" @click="definiteEdit('formEdit')">确 定</el-button>
+            </span>
+
+        </el-dialog>
+
+    </div>
+</div>
+
+<script src="../js/axios-0.18.0.js"></script>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+<script>
+  new Vue({
+    el:"#app",
+
+    data:{
+        show:true,
+        // tab默认选择
+        activeName: 'first',
+        // tab位置
+        tabPosition: 'left',
+        // 导航栏默认选择
+        activeIndex: 'adUser.html',
+        // 分页的
+        currentPage: 4,
+        // 添加弹窗状态
+        dialogVisibleAdd: false,
+        // 编辑弹窗状态
+        dialogVisibleEdit: false,
+        //模糊查询的验证
+        userFormrulesmohu:{
+            userName:[
+                { pattern:/[0-9_a-zA-Z\u4e00-\u9fa5]/, message: "请输入数字，字母，下划线", trigger: "blur" },
+            ],
+            titleName:[
+                { pattern:/[0-9_a-zA-Z\u4e00-\u9fa5]/, message: "请输入中文,数字，字母，下划线", trigger: "blur" },
+            ],
+            phone:[
+                { pattern:/^\d{1,11}$/, message: "手机号格式不对(11位)", trigger: "blur" },
+            ],
+            email:[
+                { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+            ]
+        },
+        //用户的信息的验证
+        userFormrules:{
+            userName:[
+                { required: true, message: '请输入账号名', trigger: 'blur' },
+                { pattern:/^[0-9_a-zA-Z]{1,}$/, message: "请输入数字，字母，下划线（至少包含其中一种,）", trigger: "blur" },
+                { max:10, message: '长度为10位', trigger: 'blur' }
+            ],
+            titleName:[
+                { required: true, message: '请输入用户名', trigger: 'blur' },
+                { pattern:/^[0-9_a-zA-Z\u4e00-\u9fa5]{1,}$/, message: "请输入中文,数字，字母，下划线（至少包含其中一种）", trigger: "blur" },
+                { max:10, message: '长度为10位', trigger: 'blur' }
+            ],
+            password:[
+                { required: true, message: '请输入密码', trigger: 'blur' },
+                { pattern:/^[0-9a-zA-Z]{1,}$/, message: "请输入输入数字，字母（至少包含其中一种）", trigger: "blur" },
+                { max:10, message: '长度为10位', trigger: 'blur' }
+            ],
+            sex:[
+                { required: true, message: '请输入性别', trigger: 'blur' },
+            ],
+            phone:[
+                { required: true, message: '请输入手机号', trigger: 'blur' },
+                { pattern:/^1[23456789]\d{9}$/, message: "手机号格式不对(11位)", trigger: "blur" },
+            ],
+            birthday:[
+                { required: true, message: '请输入出生日期', trigger: 'blur' },
+            ],
+            email:[
+                { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+                { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+            ]
+        },
+        // 表格数据
+        tableData: [{
+            uid: '',
+            userName:'',
+            titleName:'',
+            password: '',
+            sex: '',
+            phone: '',
+            birthday: '',
+            email: ''
+        }],
+        // 条件查询数据
+        formInline: {
+            uid: '',
+            userName:'',
+            titleName:'',
+            password: '',
+            sex: '',
+            phone: '',
+            birthday: '',
+            email: ''
+        },
+        // 添加弹窗数据
+        formAdd: {
+            uid: '',
+            userName:'',
+            titleName:'',
+            password: '',
+            sex: '',
+            phone: '',
+            birthday: '',
+            email: ''
+        },
+        // 编辑弹窗数据
+        formEdit: {
+            uid: '',
+            userName:'',
+            titleName:'',
+            password: '',
+            sex: '',
+            phone: '',
+            birthday: '',
+            email: ''
+        },
+        // 添加弹窗的表单对齐方式
+        labelPosition:'right'
+    },
+      created(){
+        this.Userselect()
+      },
+
+    methods:{
+        /*修改信息*/
+        Edit(row){
+            // this.formEdit=row.data;
+            this.formEdit=row;
+        },
+        /*确定修改的信息发送到后端*/
+        definiteEdit(form){
+            let that=this;
+                   /* axios({
+                        method: "put",
+                        url: "http://localhost:8080/PlaneTicket/admin/users",
+                        data:that.formEdit,
+                        contentType:'application/json;charset=uft-8'
+                    }).then(function (resp) {
+                        that.$message({
+                            message: '修改成功',
+                            type: 'success'
+                        });
+                    });*/
+            this.$refs[form].validate((valid) => {
+                if(valid==true) {
+                    axios({
+                    method: "put",
+                    url: "http://localhost:8080/PlaneTicket/admin/users",
+                    data:that.formEdit,
+                    contentType:'application/json;charset=uft-8'
+                }).then(function (resp) {
+                    that.$message({
+                        message: '修改成功',
+                        type: 'success'
+                    });
+                    that.dialogVisibleEdit = false;
+                });};
+            });
+        },
+
+
+        /*未写完成删除数据*/
+        deleteUser(row){
+
+            //页面加载完成后，发送异步请求，查询数据
+            axios.delete('/PlaneTicket/admin/users/' + row.uid).then((res)=>{
+                if(res.data == true){
+                    this.Userselect();
+                   alert("删除成功")
+                }else {
+                    alert("删除失败")
+                }
+            })
+
+        },
+
+        /*查询所有信息*/
+        Userselect(){
+            let _this = this;
+            //页面加载完成后，发送异步请求，查询数据
+            axios({
+                method: "get",
+                url: "http://localhost:8080/PlaneTicket/admin/users/all",
+            }).then(function (resp) {
+                _this.tableData = resp.data;
+                //console.log(resp.data);
+            })
+
+        },
+
+        /*重置按钮的js,实现输入框清空*/
+        Reset(){
+            this.formInline.userName="";
+            this.formInline.titleName="";
+            this.formInline.password="";
+            this.formInline.sex="";
+            this.formInline.phone="";
+            this.formInline.email="";
+            this.formInline.birthday="";
+        },
+
+
+        /*添加User的方法，未完善判断输入的正确*/
+        addUser(form){
+            let _this=this;
+            this.$refs[form].validate((valid) => {
+                if(valid==true) {
+                    if(this.formAdd.userName!=null) {
+                        axios({
+                            method: "post",
+                            url: "http://localhost:8080/PlaneTicket/admin/users/add",
+                            data:this.formAdd,
+                            contentType:'application/json;charset=uft-8'
+                        }).then(function (resp) {
+                            if(resp.data){
+                                _this.dialogVisibleAdd=false;
+                                alert("添加成功")
+                                _this.Userselect()
+                            }else {
+                                alert("用户名重复")
+                            }
+                        })
+                    }else {
+                        alert("输入用户名为空")
+                    }
+                    this.Userselect();
+                };
+            });
+           /* if(this.formAdd.userName!=null) {
+                axios({
+                    method: "post",
+                    url: "http://localhost:8080/PlaneTicket/admin/users/add",
+                    data:this.formAdd,
+                    contentType:'application/json;charset=uft-8'
+                }).then(function (resp) {
+                    if(resp.data){
+                        _this.dialogVisibleAdd=false;
+                        alert("添加成功")
+                        _this.Userselect()
+                    }else {
+                        alert("用户名重复")
+                    }
+                })
+            }else {
+                alert("输入用户名为空")
+            }
+            this.Userselect();*/
+        },
+
+        // tab的点击事件
+        handleClick(tab, event) {
+            console.log(tab, event);
+        },
+        // 表格的批量选择
+        handleSelectionChange(val) {
+            this.multipleSelection = val;
+        },
+
+        // 条件查询提交按钮
+        mohuchax(form) {
+            let _this=this;
+            this.$refs[form].validate((valid) => {
+                if(valid==true) {
+                    axios({
+                    method: "post",
+                    url:"http://localhost:8080/PlaneTicket/admin/users/dySelect",
+                    data:this.formInline,
+                    contentType:'application/json;charset=uft-8'
+                }).then(function (resp) {
+                    _this.tableData =resp.data;
+
+                    //console.log(_this.tableData);
+                })
+                    this.Userselect();};
+            });
+
+        },
+
+        // 导航栏的选择事件
+        handleSelect(routePath) {
+            location.href = routePath;
+        },
+        // 添加弹窗关闭事件
+        handleClose(done) {
+            this.$confirm('确认关闭？')
+                .then(_ => {
+                    done();
+                })
+                .catch(_ => {});
+        },
+        // 分页的
+        handleSizeChange(val) {
+            console.log(`每页 ${val} 条`);
+        },
+        handleCurrentChange(val) {
+            console.log(`当前页: ${val}`);
+        },
+    }
+
+  })
+</script>
+</body>
+</html>

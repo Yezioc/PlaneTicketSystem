@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>帮助中心</title>
+    <link rel="icon" href="img/logo.ico" type="image/x-icon">
+    <style>
+        /*整体*/
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-row {
+            margin-bottom: 20px;
+        }
+
+
+    </style>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/vue.js"></script>
+</head>
+<body>
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+
+        <el-container>
+
+            <!--头部-->
+            <el-header style="display: flex;justify-content: space-between;align-items: center">
+
+                <!--Logo-->
+                <el-image :src="logoUrl" style="height: 55px"></el-image>
+
+                <!--导航栏-->
+                <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+                    <el-menu-item index="/PlaneTicket">机场首页</el-menu-item>
+                    <el-menu-item index="notice.html">机场公告</el-menu-item>
+                    <el-menu-item index="help.html">帮助中心</el-menu-item>
+                    <el-menu-item index="advice.html">建议中心</el-menu-item>
+                </el-menu>
+
+                <!--用户头像-->
+                <div v-if="userStatus" style="display: flex;align-items: center">
+                    <el-link type="primary" :underline="false" style="margin-left: 10px" @click="drawer = true">
+                        <el-avatar :src="circleUrl"
+                                   style="transform: translateX(-120%) translateY(-50%);position: absolute;top: 50%;"></el-avatar>
+                        <span style="">{{titleNameed}}</span>
+                    </el-link>
+                </div>
+                <!--登录注册按钮-->
+                <el-link type="primary" :underline="false" v-if="!userStatus" @click="dialogVisible = true">
+                    登录/注册
+                </el-link>
+            </el-header>
+
+            <el-main>
+                <el-collapse v-model="activeNameList" accordion>
+                    <el-collapse-item title="客服热线" name="1">
+                        <div>订单服务：
+                            <el-link type="primary" :underline="false">
+                                400-5000-6662
+                            </el-link>
+                        </div>
+                        <div>机票服务：
+                            <el-link type="primary" :underline="false">
+                                400-5000-6663
+                            </el-link>
+                        </div>
+                        <div>机场服务：
+                            <el-link type="primary" :underline="false">
+                                400-5000-6664
+                            </el-link>
+                        </div>
+                        <div>行李服务：
+                            <el-link type="primary" :underline="false">
+                                400-5000-6665
+                            </el-link>
+                        </div>
+                        <div>遗失登记：
+                            <el-link type="primary" :underline="false">
+                                400-5000-6666
+                            </el-link>
+                        </div>
+                        <div>残障服务：
+                            <el-link type="primary" :underline="false">
+                                400-5000-6667
+                            </el-link>
+                        </div>
+                    </el-collapse-item>
+                    <el-collapse-item title="购票流程" name="2">
+                        <div>第一步：登录用户或注册用户后登录。</div>
+                        <div>第二步：选择出发城市、到达城市、出发日期、和是否购买往返，如果购买往返，则选择返程日期，选择完成后点击查询。</div>
+                        <div>第三步：选择需要购买的机票点击购买，如果选择了返程则继续选择返程机票然后点击购买。</div>
+                        <div>第四步：在页面右侧先确定所购买的机票信息是否与所需要购买的机票信息相符，点击添加乘机人或者选择已有乘机人，选择后确认价格，然后提交订单。</div>
+                        <div>第五步：选择需要支付的机票支付或者取消订单，如果全部需要则点击支付全部，支付完成后点击已支付即可刷新。</div>
+                        <div>第六步：支付完成后可点击查看订单查看已购买订单的座位和详细信息，或者点击返回首页继续购买。</div>
+                    </el-collapse-item>
+                    <el-collapse-item title="行李服务指南" name="3">
+                        <div>
+                            <span style="font-weight: bold">
+                                什么是行李？
+                            </span>
+                            指承运人同意运输的、旅客在旅行中携带的物品，包括托运行李和非托运行李。
+                        </div>
+                        <div>
+                            <span style="font-weight: bold">
+                                哪些物品不得带上飞机？
+                            </span>
+                            具体参见快一步航空官网“禁止随身携带和托运的物品”。
+                        </div>
+                        <div>
+                            <span style="font-weight: bold">
+                                我要托运的行李，一定要在坐飞机当天才能办理托运手续吗？
+                            </span>
+                            一般只在航班离站当日办理乘机手续时收运行李。
+                        </div>
+                        <div>
+                            <span style="font-weight: bold">
+                                我能携带贵重物品进入客舱吗？
+                            </span>
+                            您可以将贵重物品带入客舱，但是需要您照管您的物品，如货币、珠宝、票据、重要文件和资料、证券、汇票、易碎易腐物品和其他需要专人照管的物品。
+                        </div>
+                        <div>
+                            <span style="font-weight: bold">
+                                乘坐飞机为什么要进行安全检查？
+                            </span>
+                            为了您和他人的人身和财产安全，根据《中国民用航空安全检查规则》规定，所有旅客和行李都必须经过安全检查。
+                            未经过安全检查的旅客、行李，拒绝其乘机、收运。
+                        </div>
+                    </el-collapse-item>
+                    <el-collapse-item title="关于快一步航空" name="4">
+                        <div>快一步航空由初始的简单三层框架和JSP页面开发</div>
+                        <div>到后来的 Spring + SpringMVC + Mybatis-Plus + Vue + Axios + Element-ui 进行开发</div>
+                        <div>我们重写了所有JSP课程的项目，从零到一重新搭建，历时2个月之久</div>
+                        <div>同时也感谢所有小组成员2个月的辛苦付出。每人都是缺一不可的存在！致谢！</div>
+                    </el-collapse-item>
+                </el-collapse>
+            </el-main>
+
+        </el-container>
+        <!--用户抽屉-->
+        <el-drawer
+                :visible.sync="drawer"
+                :before-close="handleClose"
+                size="200px">
+            <span slot="title">
+                <div v-show="true" style="display: flex;align-items: center;justify-content: center">
+                    <el-link type="primary" :underline="false" style="margin-left: 10px" @click="drawer = true">
+                        <el-avatar :src="circleUrl"
+                                   style="transform: translateX(-120%) translateY(-50%);position: absolute;top: 50%;"></el-avatar>
+                        {{titleNameed}}
+                    </el-link>
+                </div>
+            </span>
+            <div style="width: 100%;height: 100%;display: flex;justify-content: space-between;align-items: center;flex-direction: column">
+                <div style="width: 100%;display: flex;justify-content: center;align-items: center;flex-direction: column">
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/Userpersonal.html">
+                        <i class="el-icon-user" style="font-size: 18px">个人中心</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/userOrder.html">
+                        <i class="el-icon-s-order" style="font-size: 18px">订单管理</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/User_passengers.html">
+                        <i class="el-icon-phone-outline" style="font-size: 18px">乘机人管理</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/User_changepassword.html">
+                        <i class="el-icon-lock" style="font-size: 18px">修改密码</i>
+                    </el-link>
+                </div>
+                <div>
+                    <el-link :underline="false" type="primary">
+                        <i class="el-icon-close" style="font-size: 18px;margin-bottom: 30px" @click="quit">退出</i>
+                    </el-link>
+                </div>
+            </div>
+        </el-drawer>
+        <!--登录注册弹窗-->
+        <el-dialog
+                title="登录/注册"
+                :visible.sync="dialogVisible"
+                width="530px"
+                :before-close="handleClose">
+
+            <el-tabs v-model="activeName" @tab-click="handleClick" :stretch="true">
+                <el-tab-pane label="登录" name="first">
+
+                    <el-form ref="userFormLogin" :model="userFormLogin" label-width="80px"
+                             :label-position="labelPosition" :rules="userFormrules">
+                        <el-form-item label="账号" prop="userName">
+                            <el-input v-model="userFormLogin.userName"></el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input show-password v-model="userFormLogin.password"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button style="width: 48%;" @click="activeName = 'second'">注册</el-button>
+                            <el-button type="primary" @click="login('userFormLogin')"
+                                       style="width: 48%;margin-left: 2%">
+                                登录
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-tab-pane>
+
+                <el-tab-pane label="注册" name="second">
+
+                    <el-form ref="userForm" :model="userForm" label-width="80px" :label-position="labelPosition"
+                             :rules="userFormrules">
+                        <el-form-item label="账号" prop="userName">
+                            <el-input
+                                    placeholder="请输入账号"
+                                    v-model="userForm.userName"
+                                    clearable>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="用户名" prop="titleName">
+                            <el-input
+                                    placeholder="请输入用户名"
+                                    v-model="userForm.titleName"
+                                    clearable>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input placeholder="请输入密码" v-model="userForm.password" show-password></el-input>
+                        </el-form-item>
+                        <el-form-item label="性别" prop="sex">
+                            <el-select v-model="userForm.sex" placeholder="性别">
+                                <el-option label="男" value="男"></el-option>
+                                <el-option label="女" value="女"></el-option>
+                            </el-select>
+                        </el-form-item>
+
+                        <el-form-item label="电话号码" prop="phone">
+                            <el-input v-model="userForm.phone" placeholder="电话号码"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="出生日期" prop="birthday">
+                            <el-input type="date" v-model="userForm.birthday" placeholder="出生日期"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="邮箱" prop="email">
+                            <el-input v-model="userForm.email" placeholder="邮箱"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button style="width: 48%;" @click="activeName = 'first'">返回</el-button>
+                            <el-button type="primary" style="width: 48%;margin-left: 2%" @click="register('userForm')">
+                                注册
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-tab-pane>
+            </el-tabs>
+            </span>
+
+            <!--<span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+            </span>-->
+        </el-dialog>
+    </div>
+
+</div>
+
+<script src="js/axios-0.18.0.js"></script>
+<script src="js/vue.js"></script>
+<script src="element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+
+<script>
+
+    new Vue({
+        el: "#app",
+        data: {
+            activeNameList: '0',
+            //用户的信息的验证
+            userFormrules: {
+                userName: [
+                    {required: true, message: '请输入账号名', trigger: 'blur'},
+                    {pattern: /^[0-9_a-zA-Z]{1,}$/, message: "请输入数字，字母，下划线（至少包含其中一种,）", trigger: "blur"},
+                    {max: 10, message: '长度为10位', trigger: 'blur'}
+                ],
+                titleName: [
+                    {required: true, message: '请输入用户名', trigger: 'blur'},
+                    {
+                        pattern: /^[0-9_a-zA-Z\u4e00-\u9fa5]{1,}$/,
+                        message: "请输入中文,数字，字母，下划线（至少包含其中一种）",
+                        trigger: "blur"
+                    },
+                    {max: 10, message: '长度为10位', trigger: 'blur'}
+                ],
+                password: [
+                    {required: true, message: '请输入密码', trigger: 'blur'},
+                    {pattern: /^[0-9a-zA-Z]{1,}$/, message: "请输入输入数字，字母（至少包含其中一种）", trigger: "blur"},
+                    {max: 10, message: '长度为10位', trigger: 'blur'}
+                ],
+                sex: [
+                    {required: true, message: '请输入性别', trigger: 'blur'},
+                ],
+                phone: [
+                    {required: true, message: '请输入手机号', trigger: 'blur'},
+                    {pattern: /^1[23456789]\d{9}$/, message: "手机号格式不对(11位)", trigger: "blur"},
+                ],
+                birthday: [
+                    {required: true, message: '请输入出生日期', trigger: 'blur'},
+                ],
+                email: [
+                    {required: true, message: '请输入邮箱地址', trigger: 'blur'},
+                    {type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change']}
+                ]
+            },
+            //是否第一次登录检查
+            firstck: 0,
+            // 登录注册表单数据
+            userForm: {
+                uid: '',
+                userName: '',
+                titleName: '',
+                password: '',
+                sex: '',
+                phone: '',
+                birthday: '',
+                email: ''
+            },
+            userFormLogin: {
+                uid: '',
+                userName: '',
+                titleName: '',
+                password: '',
+                sex: '',
+                phone: '',
+                birthday: '',
+                email: ''
+            },
+            // tab默认选择
+            activeName: 'first',
+            drawer: false,
+            labelPosition: 'right',
+            //登录状态
+            userStatus: false,
+            // 登录弹窗状态
+            dialogVisible: false,
+            // 导航栏index值
+            activeIndex: 'help.html',
+            fit: 'cover',
+            // 头像图片路径
+            circleUrl: 'img/usertx.png',
+            logoUrl: 'img/logo.png',
+            titleNameed: '',
+        },
+        created() {
+            this.ckLogin();
+        },
+        methods: {
+            handleClose(done) {
+                done();
+            },
+            //检查登录
+            ckLogin() {
+                axios.get('/PlaneTicket/user/users/check').then((res) => {
+                    if (res.data != null && res.data != '') {
+                        this.userStatus = true;
+                        this.titleNameed = res.data;
+                        this.dialogVisible = false;
+                    } else {
+                        if (this.firstck == 0) {
+                            this.firstck = 1;
+                        } else {
+                            this.dialogVisible = true;
+                        }
+                    }
+                });
+            },
+            //登录按钮
+            login(form) {
+                this.$refs[form].validate((valid) => {
+                    if (valid == true) {
+                        axios.get('/PlaneTicket/user/users/login?userName=' + this.userFormLogin.userName + '&password=' + this.userFormLogin.password).then((res) => {
+                            if (res.data) {
+                                axios.get('/PlaneTicket/user/users/check').then((res) => {
+                                    if (res.data != null && res.data != '') {
+                                        this.userStatus = true;
+                                        this.titleNameed = res.data;
+                                        this.dialogVisible = false;
+                                        this.$message({
+                                            message: '恭喜你，登陆成功！',
+                                            type: 'success'
+                                        });
+                                    } else {
+                                        this.$message.error('登录异常，请重新登录！');
+                                        if (this.firstck == 0) {
+                                            this.firstck = 1;
+                                        } else {
+                                            this.dialogVisible = true;
+                                        }
+                                    }
+                                });
+                            } else {
+                                this.$message.error('用户名密码不存在，请重新登录！');
+                            }
+                        });
+                    }
+                    ;
+                });
+            },
+            /*注册用户*/
+            register(form) {
+                let _this = this;
+                this.$refs[form].validate((valid) => {
+                    if (valid == true) {
+                        axios({
+                            method: "post",
+                            url: "http://localhost:8080/PlaneTicket/user/users/add",
+                            xhrFields: {withCredentials: true}, crossDomain: true,
+                            data: _this.userForm,
+                            contentType: 'application/json;charset=uft-8'
+                        }).then(function (resp) {
+                            if (resp.data) {
+                                _this.$message({
+                                    message: '恭喜你，注册成功！',
+                                    type: 'success'
+                                });
+                                _this.activeName = "first";
+                                _this.userFormLogin.userName = _this.userForm.userName;
+                                _this.userForm = {};
+                            } else {
+                                _this.$message({
+                                    message: '不好意思，账号重复！',
+                                    type: 'warning'
+                                });
+                            }
+                        })
+                    }
+                    ;
+                });
+
+            },
+            /*退出登录*/
+            quit() {
+                let _this = this;
+                axios({
+                    method: "get",
+                    url: "http://localhost:8080/PlaneTicket/user/users/quit",
+                }).then(function (resp) {
+                    if (resp.data === true) {
+                        _this.userStatus = false;
+                        _this.psgtableData = null;
+                        _this.drawer = false;
+                    }
+                })
+            },
+            // 导航栏选择方法
+            handleSelect(routePath) {
+                location.href = routePath;
+            },
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            }
+        }
+    });
+
+</script>
+</body>
+</html>

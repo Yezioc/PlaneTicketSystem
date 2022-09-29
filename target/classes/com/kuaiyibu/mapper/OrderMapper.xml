@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kuaiyibu.mapper.OrderMapper">
+
+    <resultMap id="orderMap" type="order">
+        <id property="oid" column="oid"/>
+        <result property="onum" column="onum"/>
+        <result property="ouid" column="ouid"/>
+        <result property="opid" column="opid"/>
+        <result property="otid" column="otid"/>
+        <result property="osid" column="osid"/>
+        <result property="time" column="time"/>
+        <result property="state" column="state"/>
+        <result property="payState" column="pay_state"/>
+        <result property="deleted" column="deleted"/>
+        <association property="passenger" javaType="passenger" resultMap="com.kuaiyibu.mapper.PassengerMapper.passengerMap"/>
+        <association property="ticket" javaType="ticket" resultMap="com.kuaiyibu.mapper.TicketMapper.ticketMap"/>
+        <association property="seat" javaType="seat" resultMap="com.kuaiyibu.mapper.SeatMapper.seatMap"/>
+    </resultMap>
+
+    <select id="selectByCondition" resultMap="orderMap">
+        select *
+        from tb_passenger p,tb_ticket t,tb_seat s,tb_order o
+        where o.opid=p.pid and o.otid=t.tid and o.osid=s.sid
+        <if test="onum!=null and onum!=''">
+            and onum like '%${onum}%'
+        </if>
+        <if test="time!=null and time!=''">
+            and time like '%${time}%'
+        </if>
+        <if test="ticket.shift!=null and ticket.shift!=''">
+            and shift like '%${ticket.shift}%'
+        </if>
+        <if test="ticket.origin!=null and ticket.origin!=''">
+            and origin like '%${ticket.origin}%'
+        </if>
+        <if test="ticket.end!=null and ticket.end!=''">
+            and end like '%${ticket.end}%'
+        </if>
+        <if test="ticket.date!=null and ticket.date!=''">
+            and date like '%${ticket.date}%'
+        </if>
+        <if test="state!=null and state!=''">
+            and state = '${state}'
+        </if>
+        <if test="payState!=null and payState!=''">
+            and pay_state = '${payState}'
+        </if>
+    </select>
+
+    <select id="selectByConditionCel" resultMap="orderMap">
+        select *
+        from tb_passenger p,tb_ticket t,tb_order o
+        where o.opid=p.pid and o.otid=t.tid and state='已取消'
+        <if test="onum!=null and onum!=''">
+            and onum like '%${onum}%'
+        </if>
+        <if test="time!=null and time!=''">
+            and time like '%${time}%'
+        </if>
+        <if test="ticket.shift!=null and ticket.shift!=''">
+            and shift like '%${ticket.shift}%'
+        </if>
+        <if test="ticket.origin!=null and ticket.origin!=''">
+            and origin like '%${ticket.origin}%'
+        </if>
+        <if test="ticket.end!=null and ticket.end!=''">
+            and end like '%${ticket.end}%'
+        </if>
+        <if test="ticket.date!=null and ticket.date!=''">
+            and date like '%${ticket.date}%'
+        </if>
+        <if test="state!=null and state!=''">
+            and state = '${state}'
+        </if>
+        <if test="payState!=null and payState!=''">
+            and pay_state = '${payState}'
+        </if>
+    </select>
+
+</mapper>

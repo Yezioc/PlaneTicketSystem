@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>快一步航班管理系统</title>
+    <link rel="icon" href="../img/logo.ico" type="image/x-icon">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        a {
+            color: #409eff;
+            text-decoration: none;
+        }
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+        .el-main {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+        <!--头部-->
+        <el-header>
+            <p style="margin: 0;font-weight: bold;font-size: 25px">
+                快一步航班管理系统
+                <el-link type="primary" :underline="false" href="/PlaneTicket/admin">
+                    切换权限
+                </el-link>
+            </p>
+        </el-header>
+
+        <!--导航栏-->
+        <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-menu-item index="adTicket.html">航班管理</el-menu-item>
+            <el-menu-item index="adOrder.html">订单管理</el-menu-item>
+            <el-menu-item index="adSeat.html">座位管理</el-menu-item>
+            <el-menu-item index="adUser.html">用户管理</el-menu-item>
+            <el-menu-item index="adPassenger.html">乘机人管理</el-menu-item>
+            <el-menu-item index="adNotice.html">公告管理</el-menu-item>
+            <el-menu-item index="adAdvice.html">建议管理</el-menu-item>
+        </el-menu>
+
+        <!--tab-->
+        <el-tabs v-model="activeName" :tab-position="tabPosition" @tab-click="handleClick">
+
+            <!--第一页-->
+            <el-tab-pane name="first">
+                <el-tooltip slot="label" class="item" effect="dark" content="主页" placement="right" :open-delay="500">
+                    <i class="el-icon-house"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--条件查询-->
+                    <el-form :inline="true" :model="formSelect" class="demo-form-inline">
+
+                        <el-row>
+                            <el-form-item label="班次">
+                                <el-input v-model="formSelect.shift" clearable placeholder="班次"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发城市">
+                                <el-select v-model="formSelect.origin" clearable filterable placeholder="出发城市">
+                                    <el-option
+                                            v-for="str in originCity"
+                                            :label="str.origin"
+                                            :value="str.origin">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                            <el-form-item label="到达城市">
+                                <el-select v-model="formSelect.end" clearable filterable placeholder="到达城市">
+                                    <el-option
+                                            v-for="str in endCity"
+                                            :label="str.end"
+                                            :value="str.end">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                        </el-row>
+
+
+                        <el-row>
+                            <el-form-item label="日期">
+                                <el-input v-model="formSelect.date" clearable placeholder="日期"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发时间">
+                                <el-input v-model="formSelect.startTime" clearable placeholder="出发时间"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="到达时间">
+                                <el-input v-model="formSelect.endTime" clearable placeholder="到达时间"></el-input>
+                            </el-form-item>
+
+                        </el-row>
+
+                        <el-row>
+                            <el-form-item label="价格">
+                                <el-input v-model="formSelect.price" clearable placeholder="价格"></el-input>
+                            </el-form-item>
+
+                            <el-form-item style="margin-left: 30px">
+                                <el-button icon="el-icon-refresh-right" @click="selRes">重置</el-button>
+                                <el-button type="primary" @click="getByCondition" icon="el-icon-search">查询</el-button>
+                            </el-form-item>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                prop="shift"
+                                label="班次"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="origin"
+                                label="出发城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="end"
+                                label="到达城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="date"
+                                label="日期"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="startTime"
+                                label="出发时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="endTime"
+                                label="到达时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="price"
+                                label="价格"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                label="操作">
+                            <template slot-scope="scope">
+
+                                <el-button type="primary" icon="el-icon-set-up" circle size="medium" @click="toEdit(scope.row)"></el-button>
+
+                            </template>
+
+                        </el-table-column>
+                    </el-table>
+
+                    <!--分页-->
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.currentPage"
+                            :page-sizes="[5,10, 20, 30, 50]"
+                            :page-size="pagination.pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="pagination.total">
+                    </el-pagination>
+
+                </el-main>
+
+            </el-tab-pane>
+
+            <!--第二页-->
+            <el-tab-pane name="second" align="center">
+                <el-tooltip slot="label" class="item" effect="dark" content="座位详细" placement="right" :open-delay="500">
+                    <i class="el-icon-set-up"></i>
+                </el-tooltip>
+
+                <el-form label-width="80px" :inline="true" >
+                    <el-form-item label="班次">{{tided.shift}}</el-form-item>
+                    <el-form-item label="出发城市">{{tided.origin}}</el-form-item>
+                    <el-form-item label="到达城市">{{tided.end}}</el-form-item><br>
+                    <el-form-item label="日期">{{tided.date}}</el-form-item>
+                    <el-form-item label="出发时间">{{tided.startTime}}</el-form-item>
+                    <el-form-item label="到达时间">{{tided.endTime}}</el-form-item>
+                </el-form>
+                <div style="display: flex;justify-content: center;align-items: center">
+                    <div style="display: flex;flex-direction: row">
+                        <div  style="display: flex;flex-direction: column">
+                            <el-button style="margin: 10px" icon="el-icon-toilet-paper" circle></el-button>
+                            <el-button style="margin: 10px;height: 40.8px;" v-for="i in seats.length/6" :kep="i"  circle>{{i<10 ? "0"+i : i}}</el-button>
+                        </div>
+
+                        <div style="display: flex;flex-direction: column;width: 360px;">
+                            <div style="display: flex;flex-wrap: wrap;">
+                                <el-button style="margin: 10px" circle><div style="width: 14px">A</div></el-button>
+                                <el-button style="margin: 10px" circle><div style="width: 14px">B</div></el-button>
+                                <el-button style="margin: 10px" circle><div style="width: 14px">C</div></el-button>
+                                <el-button style="margin: 10px" circle><div style="width: 14px">D</div></el-button>
+                                <el-button style="margin: 10px" circle><div style="width: 14px">E</div></el-button>
+                                <el-button style="margin: 10px" circle><div style="width: 14px">F</div></el-button>
+                            </div>
+                            <div style="display: flex;flex-direction: row">
+                                <div style="display: flex;flex-wrap: wrap;">
+                                    <el-button style="margin: 10px" @click="openState(seat.sid)"  v-for="seat in seats" :kep="seat" :type="seat.seatState == 1? 'success' : 'info'" :icon="seat.seatState == 1? 'el-icon-check' : 'el-icon-close'" circle></el-button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+
+
+
+
+
+
+            </el-tab-pane>
+
+
+        </el-tabs>
+
+        <!--编辑座位状态弹窗-->
+        <el-dialog
+                title="座位状态"
+                :visible.sync="seatDialogVisibleEdit"
+                width="30%"
+                :before-close="seatHandleClose">
+
+            <el-form ref="form" :model="seatStateEdit" :label-position="labelPosition2" label-width="80px">
+
+
+                <el-switch
+                        v-model="seatStateEdit.seatState == 1"
+                        active-text="有人"
+                        inactive-text="没人"
+                        @change="scChange">
+                </el-switch>
+
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="seatDialogVisibleEdit = false">取 消</el-button>
+                    <el-button type="primary" @click="upState()">确 定</el-button>
+            </span>
+
+        </el-dialog>
+    </div>
+</div>
+
+<script src="../js/axios-0.18.0.js"></script>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+<script>
+  new Vue({
+    el:"#app",
+    data:{
+        // 分页的
+        pagination: {
+            currentPage: 1,//当前页码
+            pageSize:5,//每页显示的记录数
+            total:0,//总记录数
+        },
+        // 条件查询数据
+        formSelect: {
+            tid: '',
+            shift: '',
+            origin: '',
+            end: '',
+            date: '',
+            startTime: '',
+            endTime: '',
+            price: ''
+        },
+        // 编辑弹窗数据
+        seatStateEdit: {
+            passageSeat: '',
+            seatState: '',
+            sid: '',
+            tid: '',
+        },
+        labelPosition2:'right',
+        seats:[],
+        //弹框隐藏
+        seatDialogVisibleEdit:false,
+        //记录当前座位
+        tided:'',
+        // tab默认选择
+        activeName: 'first',
+        // tab位置
+        tabPosition: 'left',
+        // 导航栏默认选择
+        activeIndex: 'adSeat.html',
+        // 分页的
+        currentPage: 4,
+        // 添加弹窗状态
+        dialogVisibleAdd: false,
+        // 编辑弹窗状态
+        dialogVisibleEdit: false,
+        // 表格数据
+        tableData: [],
+        // 条件查询数据
+        formInline: {
+            user: '',
+            region: ''
+        },
+        formEdit:{
+            name: '',
+            region: '',
+            date1: '',
+            date2: '',
+            delivery: false,
+            type: [],
+            resource: '',
+            desc: ''
+        },
+        // 添加弹窗数据
+        formAdd: {
+            name: '',
+            region: '',
+            date1: '',
+            date2: '',
+            delivery: false,
+            type: [],
+            resource: '',
+            desc: ''
+        },
+
+        //出发城市数据
+        originCity:[],
+        //到达城市数据
+        endCity:[],
+        // 添加弹窗的表单对齐方式
+        labelPosition:'right',
+        labelPosition1:'right',
+
+
+    },
+      created(){
+          this.getAll();
+          this.getOriginCity();
+          this.getEndCity();
+      },
+    methods:{
+        // 条件查询提交按钮
+        getByCondition() {
+            this.getAll();
+        },
+        //获取出发城市
+        getOriginCity() {
+            axios.get('/PlaneTicket/admin/tickets/city/origin').then((res)=>{
+                this.originCity = res.data;
+            });
+        },
+        //获取到达城市
+        getEndCity() {
+            axios.get('/PlaneTicket/admin/tickets/city/end').then((res)=>{
+                this.endCity = res.data;
+            });
+        },
+        //查询所有
+        getAll(){
+            // axios.get('/PlaneTicket/admin/tickets').then((res)=>{
+            //     this.tableData = res.data;
+            // });
+            let param = "?tid="+this.formSelect.tid;
+            param += "&shift="+this.formSelect.shift;
+            param += "&origin="+this.formSelect.origin;
+            param += "&end="+this.formSelect.end;
+            param += "&date="+this.formSelect.date;
+            param += "&startTime="+this.formSelect.startTime;
+            param += "&endTime="+this.formSelect.endTime;
+            param += "&price="+this.formSelect.price;
+            axios.get('/PlaneTicket/admin/tickets/' + this.pagination.currentPage + '/' + this.pagination.pageSize + param).then((res)=>{
+                this.pagination.pageSize = res.data.size;
+                this.pagination.currentPage = res.data.current;
+                this.pagination.total = res.data.total;
+                this.tableData = res.data.records;
+            });
+        },
+        //添加重置按钮
+        selRes(){
+            this.formSelect = {};
+        },
+
+        //点击修改座位状态
+        openState(sid){
+            axios.get('/PlaneTicket/admin/seats/'+sid).then((res)=>{
+                this.seatStateEdit = res.data;
+                this.seatDialogVisibleEdit=true;
+            });
+        },
+
+        //确认弹出框
+        upState() {
+            axios.put('/PlaneTicket/admin/seats/'+this.seatStateEdit.sid+'/'+this.seatStateEdit.seatState).then((res)=>{
+                if(res.data == true){
+                    this.$message({
+                        message: '恭喜你，修改状态成功',
+                        type: 'success'
+                    });
+
+                }else{
+                    this.$message.error({
+                        message: '不好意思，修改状态失败',
+                    });
+                }
+            }).finally(()=>{
+                this.seatDialogVisibleEdit=false;
+                this.toEdit(this.tided);
+            });
+
+        },
+        //座位改变执行方法
+        scChange(){
+            if(eval(this.seatStateEdit.seatState) == 1){
+                this.seatStateEdit.seatState = 0;
+            }else{
+                this.seatStateEdit.seatState = 1;
+            }
+        },
+        selectByCondition(){
+
+        },
+        toEdit(ticket){
+            this.tided = ticket;
+            axios.get('/PlaneTicket/admin/seats/getseats/'+this.tided.tid).then((res)=>{
+                this.seats = res.data;
+                this.activeName = 'second'
+            });
+        },
+
+
+        //seat的Tab点击事件
+        seatHandleClick(tab, event) {
+            console.log(tab, event);
+        },
+
+
+        // tab的点击事件
+        handleClick(tab, event) {
+            console.log(tab, event);
+        },
+        seatHandleClose(tab, event) {
+            console.log(tab, event);
+        },
+        //座位弹窗关闭事件
+        seatHandleClose(done) {
+            this.$confirm('确认关闭？')
+                .then(_ => {
+                    done();
+                })
+                .catch(_ => {});
+        },
+
+        // 表格的批量选择
+        handleSelectionChange(val) {
+            this.multipleSelection = val;
+        },
+        // 导航栏选择方法
+        handleSelect(routePath) {
+            location.href = routePath;
+        },
+        // 添加弹窗关闭事件
+        handleClose(done) {
+            this.$confirm('确认关闭？')
+                .then(_ => {
+                    done();
+                })
+                .catch(_ => {});
+        },
+        // 分页的
+        handleSizeChange(val) {
+            this.pagination.pageSize = val;
+            this.pagination.currentPage = 1;
+            this.getAll();
+        },
+        handleCurrentChange(val) {
+            this.pagination.currentPage = val;
+            this.getAll();
+        },
+
+    }
+  })
+</script>
+</body>
+</html>

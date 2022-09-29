@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>快一步航班管理系统</title>
+    <link rel="icon" href="../img/logo.ico" type="image/x-icon">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        a {
+            color: #409eff;
+            text-decoration: none;
+        }
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+        .el-main {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+        <!--头部-->
+        <el-header>
+            <p style="margin: 0;font-weight: bold;font-size: 25px">
+                快一步航班管理系统
+                <el-link type="primary" :underline="false" href="/PlaneTicket/admin">
+                    切换权限
+                </el-link>
+            </p>
+        </el-header>
+
+        <!--导航栏-->
+        <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-menu-item index="adTicket.html">航班管理</el-menu-item>
+            <el-menu-item index="adOrder.html">订单管理</el-menu-item>
+            <el-menu-item index="adSeat.html">座位管理</el-menu-item>
+            <el-menu-item index="adUser.html">用户管理</el-menu-item>
+            <el-menu-item index="adPassenger.html">乘机人管理</el-menu-item>
+            <el-menu-item index="adNotice.html">公告管理</el-menu-item>
+            <el-menu-item index="adAdvice.html">建议管理</el-menu-item>
+        </el-menu>
+
+        <!--tab-->
+        <el-tabs v-model="activeName" :tab-position="tabPosition" @tab-click="handleClick">
+
+            <!--第一页-->
+            <el-tab-pane name="first">
+                <el-tooltip slot="label" class="item" effect="dark" content="主页" placement="right" :open-delay="500">
+                    <i class="el-icon-house"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--条件查询-->
+                    <el-form :inline="true" ref="formInline" :model="formInline" class="demo-form-inline" :rules="formrulemohu">
+
+                        <el-form-item label="姓名" prop="psName">
+                            <el-input  placeholder="乘车人姓名" v-model="formInline.psName"></el-input>
+                        </el-form-item>
+                        <el-form-item label="证件类型" >
+                            <el-select  placeholder="证件类型" v-model="formInline.cardType">
+                                <el-option label="居民身份证" value="居民身份证"></el-option>
+                                <el-option label="港澳居民来往内地通行证" value="港澳居民来往内地通行证"></el-option>
+                                <el-option label="中华人民共和国来往港澳通行证" value="中华人民共和国来往港澳通行证"></el-option>
+                                <el-option label="台湾居民来往大陆通行证" value="台湾居民来往大陆通行证"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="证件号" prop="idCard">
+                            <el-input  placeholder="证件号" v-model="formInline.idCard"></el-input>
+                        </el-form-item>
+
+                        <el-form-item>
+                            <el-button type="primary" plain icon="el-icon-refresh-right" @click="Reset">重置</el-button>
+                            <el-button type="primary" icon="el-icon-search" @click="mohuchaxun('formInline')">查询</el-button>
+                        </el-form-item>
+
+                    </el-form>
+
+                    <!--操作按钮-->
+                    <el-row>
+                       <!-- <el-button type="success" plain round icon="el-icon-plus" @click="dialogVisibleAdd = true">添加</el-button>-->
+                    </el-row>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+
+                        <el-table-column
+                                prop="psName"
+                                label="乘车人姓名"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                prop="cardType"
+                                label="证件类型"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                prop="idCard"
+                                label="证件号"
+                                sortable>
+                        </el-table-column>
+
+
+                        <el-table-column
+                                align="center"
+                                label="操作">
+                            <!--加了这个标签，slot-scope属性然后在按钮调用就能获取当前行的数据                            -->
+                            <template slot-scope="scope">
+                                <el-button type="primary" icon="el-icon-edit" circle size="medium" @click="dialogVisibleEdit = true,Edit(scope.row)" ></el-button>
+                                <el-button type="danger" icon="el-icon-delete" circle size="medium" @click="deletePassenger(scope.row)"></el-button>
+                            </template>
+
+                        </el-table-column>
+                    </el-table>
+
+                    <!--分页-->
+
+
+                    <!--                    <el-row>-->
+                    <!--                        <el-col :span="24"><div class="grid-content bg-purple-dark"></div></el-col>-->
+                    <!--                    </el-row>-->
+
+                </el-main>
+
+            </el-tab-pane>
+
+            <!--第二页-->
+            <el-tab-pane name="second">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量添加" placement="right" :open-delay="500">
+                    <i class="el-icon-plus"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+            <!--第三页-->
+            <el-tab-pane name="third">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量删除" placement="right" :open-delay="500">
+                    <i class="el-icon-delete"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+            <!--第四页-->
+            <el-tab-pane name="fourth">
+                <el-tooltip slot="label" class="item" effect="dark" content="高级设置" placement="right" :open-delay="500">
+                    <i class="el-icon-setting"></i>
+                </el-tooltip>
+
+            </el-tab-pane>
+
+        </el-tabs>
+
+        <!--添加弹窗-->
+     <!--   <el-dialog
+                title="添加"
+                :visible.sync="dialogVisibleAdd"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="form" :model="formAdd" :label-position="labelPosition" label-width="80px">
+
+                <el-form-item label="姓名" >
+                    <el-input  v-model="formAdd.psName" placeholder="乘车人姓名"></el-input>
+                </el-form-item>
+                <el-form-item label="证件类型" >
+                    <el-select  placeholder="证件类型" v-model="formAdd.cardType">
+                        <el-option label="居民身份证" value="居民身份证"></el-option>
+                        <el-option label="港澳居民来往内地通行证" value="港澳居民来往内地通行证"></el-option>
+                        <el-option label="中华人民共和国来往港澳通行证" value="中华人民共和国来往港澳通行证"></el-option>
+                        <el-option label="台湾居民来往大陆通行证" value="台湾居民来往大陆通行证"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="证件号">
+                    <el-input  placeholder="证件号" v-model="formAdd.idCard"></el-input>
+                </el-form-item>
+            </el-form>
+            &lt;!&ndash;添加的按钮-&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&ndash;&gt;
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleAdd = false">取 消</el-button>
+                    <el-button type="primary" @click="addPassenger()">确 定</el-button>
+                </span>
+
+        </el-dialog>-->
+        <!--编辑弹窗-->
+        <el-dialog
+                title="编辑"
+                :visible.sync="dialogVisibleEdit"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="formEdit" :model="formEdit" :label-position="labelPosition" label-width="80px" :rules="formrule">
+
+                <el-form-item label="姓名" prop="psName">
+                    <el-input  v-model="formEdit.psName" placeholder="乘车人姓名"></el-input>
+                </el-form-item>
+                <el-form-item label="证件类型" prop="cardType">
+                    <el-select  placeholder="证件类型" v-model="formEdit.cardType">
+                        <el-option label="居民身份证" value="居民身份证"></el-option>
+                        <el-option label="港澳居民来往内地通行证" value="港澳居民来往内地通行证"></el-option>
+                        <el-option label="中华人民共和国来往港澳通行证" value="中华人民共和国来往港澳通行证"></el-option>
+                        <el-option label="台湾居民来往大陆通行证" value="台湾居民来往大陆通行证"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="证件号" prop="idCard">
+                    <el-input  placeholder="证件号" v-model="formEdit.idCard"></el-input>
+                </el-form-item>
+            </el-form>
+            <!--修改确定-->
+            <span slot="footer" class="dialog-footer" >
+                    <el-button @click="dialogVisibleEdit = false,seletAll()">取 消</el-button>
+                    <el-button type="primary" @click="definiteEdit('formEdit')">确 定</el-button>
+                </span>
+
+
+
+        </el-dialog>
+
+    </div>
+</div>
+
+<script src="../js/axios-0.18.0.js"></script>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+<script>
+    new Vue({
+        el:"#app",
+
+        data:{
+            show:true,
+            // tab默认选择
+            activeName: 'first',
+            // tab位置
+            tabPosition: 'left',
+            // 导航栏默认选择
+            activeIndex: 'adPassenger.html',
+            // 分页的
+            currentPage: 4,
+            // 添加弹窗状态
+            dialogVisibleAdd: false,
+            // 编辑弹窗状态
+            dialogVisibleEdit: false,
+            /*添加数据*/
+            formAdd:{
+                pid:'',
+                psName:'',
+                cardType:'',
+                idCard:'',
+                uid:'',
+            },
+            /*模糊查询数据*/
+            formInline:{
+                pid:'',
+                psName:'',
+                cardType:'',
+                idCard:'',
+                uid:'',
+            },
+            /*乘车人信息*/
+            tableData:[{
+                pid:'',
+                psName:'',
+                cardType:'',
+                idCard:'',
+                uid:'',
+            }],
+            formrulemohu: {
+                psName:[
+
+                    { pattern:/^[a-zA-Z\u4e00-\u9fa5]{0,}$/, message: "请输入中文，字母", trigger: "blur" },
+                ],
+                idCard:[
+                    { pattern: /^[0-9]{1,}$/,
+                        message: '证件号码格式有误！',
+                        trigger: 'blur',
+                    }
+                ],
+            },
+            formrule: {
+                psName:[
+                    { required: true, message: '请输入姓名', trigger: 'blur' },
+                    { pattern:/^[a-zA-Z\u4e00-\u9fa5]{0,}$/, message: "请输入中文，字母", trigger: "blur" },
+                ],
+                idCard:[
+                    { required: true, message: '请输入证件号码', trigger: 'blur' },
+                    { pattern: /(^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$)|(^[1-9]\d{5}\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{2}$)/,
+                        message: '证件号码格式有误！',
+                        trigger: 'blur',
+                    }
+                ],
+                cardType:[
+                    { required: true, message: '请选择证件类型', trigger: 'blur' }, ]
+            },
+            // 编辑弹窗数据
+            formEdit: {
+                uid: '',
+                userName:'',
+                titleName:'',
+                password: '',
+                sex: '',
+                phone: '',
+                birthday: '',
+                email: ''
+            },
+            user:{
+                uid: '',
+                userName:'',
+                titleName:'',
+                password: '',
+                sex: '',
+                phone: '',
+                birthday: '',
+                email: ''
+            },
+            // 添加弹窗的表单对齐方式
+            labelPosition:'right',
+            rules: {
+
+            }
+
+        },
+        created(){
+            let _this=this;
+            this.seletAll();
+
+
+        },
+        methods:{
+
+            /*查询当前用户乘车人信息*/
+            seletAll(){
+                let _this=this;
+                axios({
+                    method: "get",
+                    url: "http://localhost:8080/PlaneTicket/admin/passengers/selectAll",
+                }).then(function (resp) {
+                    _this.tableData = resp.data;
+                   /* console.log(_this.tableData)
+                    console.log(resp.data);*/
+                })
+            },
+
+            /*填充修改信息*/
+            Edit(row){
+                let _this=this;
+                _this.formEdit=row;
+            },
+            /*确定修改信息*/
+            definiteEdit(form){
+                let  _this=this;
+
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {  axios({
+                        method: "Put",
+                        url: "http://localhost:8080/PlaneTicket/admin/passengers",
+                        data:_this.formEdit,
+                        contentType:'application/json;charset=uft-8'
+                    }).then(function (resp) {
+                        //_this.tableData = resp.data;
+                        //console.log(resp.data);
+                        _this.dialogVisibleEdit = false
+                        _this.$message({
+                            message: '修改成功',
+                            type: 'success'
+                        });
+                    })};
+                });
+            },
+
+
+            /*模糊查询*/
+            mohuchaxun(form){
+                let _this=this;
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {axios({
+                        method: "post",
+                        url: "http://localhost:8080/PlaneTicket/admin/passengers/mohu",
+                        data:this.formInline,
+                        contentType:'application/json;charset=uft-8'
+                    }).then(function (resp) {
+                        _this.tableData = resp.data;
+                        //console.log(resp.data);
+                    })};
+                });
+            },
+
+
+            /*删除乘车人*/
+            deletePassenger(row){
+                let _this=this;
+                //页面加载完成后，发送异步请求，删除数据
+                this.$confirm('此操作将永久删除该乘机人, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'error'
+                }).then(() => {
+                    axios.delete('/PlaneTicket/admin/passengers/'+row.pid).then((res)=>{
+                        if(res.data == true){
+                            _this.$message({
+                                type: 'success',
+                                message: '删除成功!'
+                            });
+                            _this.seletAll();
+                        }else {
+                            _this.$message.error('删除失败!');
+                        }
+                    })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+
+
+            },
+
+
+            /*重置按钮的js,实现输入框清空*/
+            Reset(){
+                this.formInline.psName="";
+                this.formInline.cardType="";
+                this.formInline.idCard="";
+            },
+
+            // tab的点击事件
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            // 表格的批量选择
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+
+
+
+            // 导航栏的选择事件
+            handleSelect(routePath) {
+                location.href = routePath;
+            },
+            // 添加弹窗关闭事件
+            handleClose(done) {
+                this.$confirm('确认关闭？')
+                    .then(_ => {
+                        done();
+                    })
+                    .catch(_ => {});
+            },
+            // 分页的
+            handleSizeChange(val) {
+                console.log(`每页 ${val} 条`);
+            },
+            handleCurrentChange(val) {
+                console.log(`当前页: ${val}`);
+            },
+        }
+
+    })
+</script>
+</body>
+</html>

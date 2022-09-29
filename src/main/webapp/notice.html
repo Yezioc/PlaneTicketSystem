@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>机场公告</title>
+    <link rel="icon" href="img/logo.ico" type="image/x-icon">
+    <style>
+        /*整体*/
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        /*.el-main {
+            color: #333;
+            text-align: center;
+        }*/
+        .el-row {
+            margin-bottom: 20px;
+        }
+
+        .nobe{
+            margin: 0px;
+            font-size: 25px;
+            color: #409eff;
+            padding: 0 20px;
+        }
+        .mytime{
+            margin: 0px;
+            font-size: 30px;
+            font-weight: bolder;
+        }
+        .didian{
+            margin: 0px;
+            font-size: 15px;
+            color: #777;
+        }
+        .jiage{
+            margin: 0px;
+            font-size: 30px;
+            color: #ff7d13;
+        }
+        .buy{
+            display: inline-block;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 1px solid #ff8f33;
+            color: #FFF;
+            background-color: #ff8f33;
+            text-align: center;
+            box-sizing: border-box;
+            outline: 0;
+            margin: 0;
+            transition: .1s;
+            font-weight: 500;
+            padding: 12px 16px;
+            margin: 0 20px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        .buy:hover {
+            background-color: #ffa257;
+            border-color: #ffa257;
+        }
+        .buy:active {
+            background-color: #e6812e;
+            border-color: #e6812e;
+        }
+    </style>
+
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/vue.js"></script>
+    <script src="element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+
+</head>
+<body>
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+
+        <el-container>
+
+            <!--头部-->
+            <el-header style="display: flex;justify-content: space-between;align-items: center;background: white">
+
+                <!--Logo-->
+                <el-image
+                        style="height: 55px"
+                        :src="logoUrl"
+                        :fit="fit"></el-image>
+
+                <!--导航栏-->
+                <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+                    <el-menu-item index="/PlaneTicket">机场首页</el-menu-item>
+                    <el-menu-item index="notice.html">机场公告</el-menu-item>
+                    <el-menu-item index="help.html">帮助中心</el-menu-item>
+                    <el-menu-item index="advice.html">建议中心</el-menu-item>
+                </el-menu>
+
+                <!--登录注册按钮-->
+                <el-link type="primary" :underline="false" v-if="!userStatus" @click="dialogVisible = true,Login()">
+                    登录/注册
+                </el-link>
+                <!--用户头像-->
+                <div v-if="userStatus" style="display: flex;align-items: center">
+                    <el-link type="primary" :underline="false" style="margin-left: 10px" @click="drawer = true">
+                        <el-avatar :src="circleUrl"
+                                   style="transform: translateX(-120%) translateY(-50%);position: absolute;top: 50%;"></el-avatar>
+                        <span style="">{{titleNameed}}</span>
+                    </el-link>
+                </div>
+            </el-header>
+
+
+            <!--一个main-->
+            <el-main style="display:flex;justify-content: center;align-items: center;flex-direction: column">
+
+                <!--条件查询-->
+                <el-form :inline="true" :model="formInline" class="demo-form-inline">
+
+                    <el-form-item label="标题">
+                        <el-input clearable v-model="formInline.title" placeholder="标题"></el-input>
+                    </el-form-item>
+                    <el-form-item label="内容">
+                        <el-input clearable v-model="formInline.content" placeholder="内容"></el-input>
+                    </el-form-item>
+                    <el-form-item label="选择日期">
+                        <el-input clearable v-model="formInline.time" placeholder="选择日期"></el-input>
+                    </el-form-item>
+
+                    <el-form-item >
+                        <el-button type="primary" plain icon="el-icon-refresh-right" @click="clear">重置</el-button>
+                        <el-button type="primary" @click="selectByCondition()" icon="el-icon-search">查询</el-button>
+                    </el-form-item>
+
+                </el-form>
+
+                <!--表格-->
+                <el-table
+                        :data="tableData"
+                        stripe
+                        style="width: 900px"
+                        @selection-change="handleSelectionChange">
+                    <el-table-column
+                            type="index"
+                            width="50"
+                            label="序号"
+                            align="center">
+                    </el-table-column>
+                    <el-table-column
+                            prop="title"
+                            label="标题"
+                            sortable
+                            align="center">
+                    </el-table-column>
+                    <el-table-column
+                            prop="content"
+                            label="内容"
+                            sortable
+                            align="center">
+                    </el-table-column>
+                    <el-table-column
+                            prop="time"
+                            label="时间"
+                            sortable
+                            align="center">
+                    </el-table-column>
+
+                </el-table>
+            </el-main>
+
+
+            </el-container>
+        <!--用户抽屉-->
+        <el-drawer
+                :visible.sync="drawer"
+                :before-close="handleClose"
+                size="200px">
+            <span slot="title">
+                <div v-show="true" style="display: flex;align-items: center;justify-content: center">
+                    <el-link type="primary" :underline="false" style="margin-left: 10px" @click="drawer = true">
+                        <el-avatar :src="circleUrl"
+                                   style="transform: translateX(-120%) translateY(-50%);position: absolute;top: 50%;"></el-avatar>
+                        {{titleNameed}}
+                    </el-link>
+                </div>
+            </span>
+            <div style="width: 100%;height: 100%;display: flex;justify-content: space-between;align-items: center;flex-direction: column">
+                <div style="width: 100%;display: flex;justify-content: center;align-items: center;flex-direction: column">
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/Userpersonal.html">
+                        <i class="el-icon-user" style="font-size: 18px">个人中心</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/userOrder.html">
+                        <i class="el-icon-s-order" style="font-size: 18px">订单管理</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/User_passengers.html">
+                        <i class="el-icon-phone-outline" style="font-size: 18px">乘机人管理</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/User_changepassword.html">
+                        <i class="el-icon-lock" style="font-size: 18px">修改密码</i>
+                    </el-link>
+                </div>
+                <div>
+                    <el-link :underline="false" type="primary">
+                        <i class="el-icon-close" style="font-size: 18px;margin-bottom: 30px" @click="quit">退出</i>
+                    </el-link>
+                </div>
+            </div>
+        </el-drawer>
+        <!--登录注册弹窗-->
+        <el-dialog
+                title="登录/注册"
+                :visible.sync="dialogVisible"
+                width="530px"
+                :before-close="handleClose">
+
+            <el-tabs v-model="activeName" @tab-click="handleClick" :stretch="true">
+                <el-tab-pane label="登录" name="first">
+
+                    <el-form ref="userFormLogin" :model="userFormLogin" label-width="80px" :label-position="labelPosition" :rules="userFormrules">
+                        <el-form-item label="账号" prop="userName">
+                            <el-input v-model="userFormLogin.userName"></el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input show-password v-model="userFormLogin.password"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button style="width: 48%;" @click="activeName = 'second'">注册</el-button>
+                            <el-button type="primary" @click="login('userFormLogin')" style="width: 48%;margin-left: 2%">
+                                登录
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-tab-pane>
+
+                <el-tab-pane label="注册" name="second">
+
+                    <el-form ref="userForm" :model="userForm" label-width="80px" :label-position="labelPosition" :rules="userFormrules">
+                        <el-form-item label="账号" prop="userName">
+                            <el-input
+                                    placeholder="请输入账号"
+                                    v-model="userForm.userName"
+                                    clearable>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="用户名" prop="titleName">
+                            <el-input
+                                    placeholder="请输入用户名"
+                                    v-model="userForm.titleName"
+                                    clearable>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input placeholder="请输入密码" v-model="userForm.password" show-password></el-input>
+                        </el-form-item>
+                        <el-form-item label="性别" prop="sex">
+                            <el-select v-model="userForm.sex" placeholder="性别">
+                                <el-option label="男" value="男"></el-option>
+                                <el-option label="女" value="女"></el-option>
+                            </el-select>
+                        </el-form-item>
+
+                        <el-form-item label="电话号码" prop="phone">
+                            <el-input v-model="userForm.phone" placeholder="电话号码"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="出生日期" prop="birthday">
+                            <el-input type="date" v-model="userForm.birthday" placeholder="出生日期"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="邮箱" prop="email">
+                            <el-input v-model="userForm.email" placeholder="邮箱"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button style="width: 48%;" @click="activeName = 'first'">返回</el-button>
+                            <el-button type="primary" style="width: 48%;margin-left: 2%" @click="register('userForm')">注册
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-tab-pane>
+            </el-tabs>
+            </span>
+
+            <!--<span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+            </span>-->
+        </el-dialog>
+    </div>
+</div>
+
+
+<script src="js/axios-0.18.0.js"></script>
+<script src="js/vue.js"></script>
+<script src="element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+
+<script>
+    new Vue({
+        el:"#app",
+        data:{
+            //是否第一次登录检查
+            firstck:0,
+            //用户的信息的验证
+            userFormrules:{
+                userName:[
+                    { required: true, message: '请输入账号名', trigger: 'blur' },
+                    { pattern:/^[0-9_a-zA-Z]{1,}$/, message: "请输入数字，字母，下划线（至少包含其中一种,）", trigger: "blur" },
+                    { max:10, message: '长度为10位', trigger: 'blur' }
+                ],
+                titleName:[
+                    { required: true, message: '请输入用户名', trigger: 'blur' },
+                    { pattern:/^[0-9_a-zA-Z\u4e00-\u9fa5]{1,}$/, message: "请输入中文,数字，字母，下划线（至少包含其中一种）", trigger: "blur" },
+                    { max:10, message: '长度为10位', trigger: 'blur' }
+                ],
+                password:[
+                    { required: true, message: '请输入密码', trigger: 'blur' },
+                    { pattern:/^[0-9a-zA-Z]{1,}$/, message: "请输入输入数字，字母（至少包含其中一种）", trigger: "blur" },
+                    { max:10, message: '长度为10位', trigger: 'blur' }
+                ],
+                sex:[
+                    { required: true, message: '请输入性别', trigger: 'blur' },
+                ],
+                phone:[
+                    { required: true, message: '请输入手机号', trigger: 'blur' },
+                    { pattern:/^1[23456789]\d{9}$/, message: "手机号格式不对(11位)", trigger: "blur" },
+                ],
+                birthday:[
+                    { required: true, message: '请输入出生日期', trigger: 'blur' },
+                ],
+                email:[
+                    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+                    { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+                ]
+            },
+            // 登录注册表单数据
+            userForm: {
+                uid: '',
+                userName:'',
+                titleName:'',
+                password: '',
+                sex: '',
+                phone: '',
+                birthday: '',
+                email: ''
+            },
+            userFormLogin: {
+                uid: '',
+                userName:'',
+                titleName:'',
+                password: '',
+                sex: '',
+                phone: '',
+                birthday: '',
+                email: ''
+            },
+            // 登录弹窗状态
+            dialogVisible: false,
+            drawer:false,
+            logoUrl:'img/logo.png',
+            // tab默认选择
+            activeName: 'first',
+            // tab位置
+            tabPosition: 'left',
+            // 导航栏默认选择
+            activeIndex: 'notice.html',
+            // 分页的
+            currentPage: 4,
+            // 添加弹窗状态
+            dialogVisibleAdd: false,
+            // 编辑弹窗状态
+            dialogVisibleEdit: false,
+            // 表格数据
+            tableData: [],
+            // 条件查询数据
+            formInline: {
+                title: '',
+                content:'',
+                time: ''
+            },
+            labelPosition:'right',
+            //用户是否登录
+            userStatus: false,
+            titleNameed:'',
+            //头像路径
+            circleUrl:'img/usertx.png',
+            // 图片模式
+            fit: 'cover',
+        },
+        created(){
+            this.ckLogin();
+            this.getAll();
+        },
+        methods:{
+            //检查登录
+            ckLogin(){
+                axios.get('/PlaneTicket/user/users/check').then((res)=>{
+                    if(res.data != null && res.data != ''){
+                        this.userStatus = true;
+                        this.titleNameed = res.data;
+                        this.dialogVisible = false;
+                    }else{
+                        if(this.firstck == 0){
+                            this.firstck = 1;
+                        }else {
+                            this.dialogVisible = true;
+                        }
+                    }
+                });
+            },
+            getAll() {
+                axios.get("/PlaneTicket/notices").then((res)=>{
+                    this.tableData = res.data;
+                });
+            },
+            //登录按钮
+            login(form) {
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {                axios.get('/PlaneTicket/user/users/login?userName=' + this.userFormLogin.userName + '&password=' + this.userFormLogin.password).then((res) => {
+                        if(res.data){
+                            axios.get('/PlaneTicket/user/users/check').then((res)=>{
+                                if(res.data != null && res.data != ''){
+                                    this.userStatus = true;
+                                    this.titleNameed = res.data;
+                                    this.dialogVisible = false;
+                                    this.$message({
+                                        message: '恭喜你，登陆成功！',
+                                        type: 'success'
+                                    });
+                                }else{
+                                    this.$message.error('登录异常，请重新登录！');
+                                    if(this.firstck == 0){
+                                        this.firstck = 1;
+                                    }else {
+                                        this.dialogVisible = true;
+                                    }
+                                }
+                            });
+                        }else{
+                            this.$message.error('用户名密码不存在，请重新登录！');
+                        }
+                    });
+                    };
+                });
+            },
+            /*注册用户*/
+            register(form){
+                let _this=this;
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {axios({
+                        method: "post",
+                        url: "http://localhost:8080/PlaneTicket/user/users/add",
+                        xhrFields: {withCredentials: true}, crossDomain: true,
+                        data:_this.userForm,
+                        contentType:'application/json;charset=uft-8'
+                    }).then(function (resp) {
+                        if(resp.data) {
+                            _this.$message({
+                                message: '恭喜你，注册成功！',
+                                type: 'success'
+                            });
+                            _this.activeName="first";
+                            _this.userFormLogin.userName = _this.userForm.userName;
+                            _this.userForm = {};
+                        }
+                        else{
+                            _this.$message({
+                                message: '不好意思，账号重复！',
+                                type: 'warning'
+                            });
+                        }
+                    })};
+                });
+
+            },
+            selectById(row){
+                axios.get("/PlaneTicket/notices/"+row.nid).then((res)=>{
+                    this.formEdit = res.data;
+                    this.dialogVisibleEdit = true;
+                });
+            },
+            selectByCondition(){
+                axios.get("/PlaneTicket/notices/dySelect?title="+this.formInline.title+"&content="+this.formInline.content+"&time="+this.formInline.time).then((res)=>{
+                    //this.formInline = res.data;
+                    this.tableData = res.data;
+                });
+            },
+            // tab的点击事件
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            // 表格的批量选择
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            // 条件查询提交按钮
+            onSubmit() {
+                console.log('submit!');
+            },
+            // 导航栏选择方法
+            handleSelect(routePath) {
+                location.href = routePath;
+            },
+            // 添加弹窗关闭事件
+            handleClose(done) {
+                done();
+            },
+            /*点左边导航栏改变右边的内容*/
+            changeshow(){
+                console.log(this.show);
+                this.show=!this.show;
+                console.log(this.show);
+
+            },
+            /*退出登录*/
+            quit(){
+                let _this=this;
+                axios({
+                    method: "get",
+                    url: "http://localhost:8080/PlaneTicket/user/users/quit",
+                }).then(function (resp) {
+                    if(resp.data===true){
+                        _this.userStatus=false;
+                        _this.psgtableData=null;
+                        _this.drawer=false;
+                    }
+                })
+            },
+            // 分页的
+            handleSizeChange(val) {
+                console.log(`每页 ${val} 条`);
+            },
+            handleCurrentChange(val) {
+                console.log(`当前页: ${val}`);
+            },
+            //清空方法
+            clear(){
+                this.formInline = {
+                    title: '',
+                    content:'',
+                    time: ''
+                };
+            },
+        }
+    })
+</script>
+</body>
+</html>

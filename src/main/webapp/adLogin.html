@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员登录</title>
+    <link rel="icon" href="img/logo.ico" type="image/x-icon">
+</head>
+<body>
+<div id="app">
+    <el-container style="align-items: center">
+        <div style="
+            position: absolute;
+            top: 30%;
+            left: 4%;
+            color: white;
+            font-size: 45px;
+            font-weight: bold">权限管理员登录</div>
+        <div style="
+            position: absolute;
+            top: 0%;
+            left:0%;
+            z-index: -1;
+            border-width: 50vh 60vh 50vh 60vh;
+            border-style: solid;
+            border-color: rgb(64, 158, 255) rgb(255, 255, 255) rgb(172,255,251) rgb(64, 158, 255)">
+        </div>
+        <el-header></el-header>
+        <el-main style="display:flex;justify-content: center;align-items: center;width: 960px; height: 80vh">
+            <el-form ref="form" :model="form" label-width="150px" :rules="formrule" :label-position="labelPosition"
+                     style="display: flex;flex-direction: column;align-items: center;width: 600px">
+                <el-form-item label="管理员用户名" prop="aname">
+                    <el-input v-model="form.aname" style="width: 300px;"></el-input>
+                </el-form-item>
+                <el-form-item label="密码" prop="password">
+                    <el-input v-model="form.password" show-password style="width: 300px;"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="login()" style="width: 300px;">登录</el-button>
+                </el-form-item>
+            </el-form>
+        </el-main>
+    </el-container>
+
+</div>
+
+<script src="js/axios-0.18.0.js"></script>
+<script src="js/vue.js"></script>
+<script src="element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            labelPosition:'top',
+            form: {
+                aid: '',
+                aname: '',
+                password: '',
+                authority: ''
+            },
+            formrule: {
+                aname: [
+                    {required: true, message: '请填写此项内容', trigger: 'blur'},
+                ],
+                password: [
+                    {required: true, message: '请填写此项内容', trigger: 'blur'},
+                ]
+            }
+        },
+        methods: {
+            login() {
+                let that = this;
+                axios({
+                    method: "get",
+                    url: "http://localhost:8080/PlaneTicket/admin/login",
+                    params: {
+                        aname: that.form.aname,
+                        password: that.form.password,
+                    }
+                }).then(function (resp) {
+                    if (resp.data) {
+                        that.$message({
+                            message: '登录成功',
+                            type: 'success'
+                        });
+                        axios.get('/PlaneTicket/admin/check').then((resp) => {
+                            console.log(resp.data.authority, resp.data.authority == 'ticket', 11)
+                            if (resp.data.authority == 'ticket') {
+                                location.href = "admin/adTicket.html"
+                            } else if (resp.data.authority == 'user') {
+                                location.href = "admin/adUser.html"
+                            } else if (resp.data.authority == 'order') {
+                                location.href = "admin/adOrder.html"
+                            } else if (resp.data.authority == 'passenger') {
+                                location.href = "admin/adPassenger.html"
+                            } else if (resp.data.authority == 'seat') {
+                                location.href = "admin/adSeat.html"
+                            } else if (resp.data.authority == 'notice') {
+                                location.href = "admin/adNotice.html"
+                            } else if (resp.data.authority == 'advice') {
+                                location.href = "admin/adAdvice.html"
+                            }else {
+                                location.href = "admin/adTicket.html"
+                            }
+                        });
+                    } else {
+                        that.$message({
+                            message: '登录失败',
+                            type: 'warning'
+                        });
+                    }
+                })
+
+            }
+        }
+    });
+
+</script>
+</body>
+</html>

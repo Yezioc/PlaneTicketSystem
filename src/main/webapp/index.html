@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>快一步航班</title>
+    <link rel="icon" href="img/logo.ico" type="image/x-icon">
+    <style>
+        /*整体*/
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        /*.el-main {
+            color: #333;
+            text-align: center;
+        }*/
+        .el-row {
+            margin-bottom: 20px;
+        }
+
+        .nobe {
+            width: 110px;
+            margin: 0px;
+            font-size: 25px;
+            color: #409eff;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .mytime {
+            margin: 0px;
+            font-size: 30px;
+            font-weight: bolder;
+        }
+
+        .didian {
+            margin: 0px;
+            font-size: 15px;
+            color: #777;
+        }
+
+        .jiage {
+            margin: 0px;
+            font-size: 30px;
+            color: #ff7d13;
+        }
+
+        .buy {
+            display: inline-block;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 1px solid #ff8f33;
+            color: #FFF;
+            background-color: #ff8f33;
+            text-align: center;
+            box-sizing: border-box;
+            outline: 0;
+            margin: 0;
+            transition: .1s;
+            font-weight: 500;
+            padding: 12px 16px;
+            margin: 0 20px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .buy:hover {
+            background-color: #ffa257;
+            border-color: #ffa257;
+        }
+
+        .buy:active {
+            background-color: #e6812e;
+            border-color: #e6812e;
+        }
+    </style>
+</head>
+<body>
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+
+        <el-container>
+
+            <!--头部-->
+            <el-header style="display: flex;justify-content: space-between;align-items: center;">
+
+                <!--Logo-->
+                <el-image
+                        style="height: 55px"
+                        :src="logoUrl"
+                        :fit="fit"></el-image>
+
+                <!--导航栏-->
+                <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+                    <el-menu-item index="/PlaneTicket">机场首页</el-menu-item>
+                    <el-menu-item index="notice.html">机场公告</el-menu-item>
+                    <el-menu-item index="help.html">帮助中心</el-menu-item>
+                    <el-menu-item index="advice.html">建议中心</el-menu-item>
+                </el-menu>
+
+                <!--用户头像-->
+                <div v-if="userStatus" style="display: flex;align-items: center">
+                    <el-link type="primary" :underline="false" style="margin-left: 10px" @click="drawer = true">
+                        <el-avatar :src="circleUrl"
+                                   style="transform: translateX(-120%) translateY(-50%);position: absolute;top: 50%;"></el-avatar>
+                        <span style="">{{titleNameed}}</span>
+                    </el-link>
+                </div>
+
+                <!--登录注册按钮-->
+                <el-link type="primary" :underline="false" v-if="!userStatus" @click="dialogVisible = true">
+                    登录/注册
+                </el-link>
+
+            </el-header>
+
+            <!--选择机票页面-->
+            <div v-if="active==0">
+                <!--查询框-->
+                <el-main style="padding-bottom: 10px;display: flex;justify-content: center;align-items: center;">
+
+                    <!--查询卡片1-->
+                    <el-card class="box-card" style="width: 600px" v-show="!queryState">
+
+                        <div style="display: flex;flex-direction: column;align-items: center">
+                            <!--查询整体-->
+                            <el-row>
+
+                                <el-row>
+                                    <label style="font-weight: bold;font-size: 22px">航班查询</label>
+                                </el-row>
+
+                                <el-row>
+                                    <el-select v-model="selectForm.origin" clearable filterable placeholder="出发城市">
+                                        <el-option
+                                                v-for="str in originCity"
+                                                :label="str.origin"
+                                                :value="str.origin">
+                                        </el-option>
+                                    </el-select>
+
+                                    <i class="el-icon-sort" style="transform:rotateX(180deg)rotate(90deg)" @click="[selectForm.origin,selectForm.end] = [selectForm.end,selectForm.origin]"></i>
+
+                                    <el-select v-model="selectForm.end" clearable filterable placeholder="到达城市">
+                                        <el-option
+                                                v-for="str in endCity"
+                                                :label="str.end"
+                                                :value="str.end">
+                                        </el-option>
+                                    </el-select>
+                                </el-row>
+
+                                <el-row style="text-align: left">
+                                    <el-date-picker
+                                            v-model="selectForm.startDate"
+                                            :clearable="false"
+                                            :editable="false"
+                                            type="date"
+                                            placeholder="出发日期"
+                                            format="yyyy 年 MM 月 dd 日"
+                                            value-format="yyyy-MM-dd"
+                                            :picker-options="startPickerOptions"
+                                            style="margin-right: 25px">
+                                    </el-date-picker>
+
+                                    <el-switch
+                                            v-model="returnStatus"
+                                            active-text="往返"
+                                            inactive-text="单程"
+                                            active-color="#13ce66"
+                                            inactive-color="#409eff"
+                                            @change="switchChange()">
+                                    </el-switch>
+
+                                </el-row>
+
+                                <el-row style="text-align: left">
+                                    <el-date-picker
+                                            v-model="selectForm.endDate"
+                                            :clearable="false"
+                                            :editable="false"
+                                            type="date"
+                                            placeholder="返程日期"
+                                            :disabled="!returnStatus"
+                                            format="yyyy 年 MM 月 dd 日"
+                                            value-format="yyyy-MM-dd"
+                                            :picker-options="endPickerOptions"
+                                            style="margin-right: 25px">
+                                    </el-date-picker>
+                                    <el-radio v-model="radio" label="1">国内</el-radio>
+                                    <el-radio disabled v-model="radio" label="2" style="margin-right: 0">
+                                        国外
+                                        <label style="color: red;font-size: 8px;opacity: 0.6">
+                                            *疫情关闭
+                                        </label>
+                                    </el-radio>
+
+                                </el-row>
+
+                                <el-row>
+                                    <el-button type="primary" style="width: 100%" @click="getByCondition">查询</el-button>
+                                </el-row>
+
+                            </el-row>
+
+                        </div>
+
+                    </el-card>
+
+                    <!--查询卡片2-->
+                    <el-card class="box-card" style="width: 100%;padding: 10px" v-show="queryState">
+
+                        <!--查询整体-->
+                        <div style="display: flex;flex-direction: column;align-items: center">
+
+                            <!--查询上部-->
+                            <div style="width: 100%;display: flex;align-items: center;justify-content: flex-start;margin-bottom: 20px">
+                                <label style="font-weight: bold;font-size: 22px">航班查询</label>
+                                <el-switch
+                                        v-model="returnStatus"
+                                        active-text="往返"
+                                        inactive-text="单程"
+                                        active-color="#13ce66"
+                                        inactive-color="#409eff"
+                                        @change="switchChange()"
+                                        style="margin: 0px 50px">
+                                </el-switch>
+                                <div>
+                                    <el-radio v-model="radio" label="1" style="margin-right: 25px">国内</el-radio>
+                                    <el-radio disabled v-model="radio" label="2">
+                                        国外
+                                        <label style="color: red;font-size: 8px;opacity: 0.6">
+                                            *疫情关闭
+                                        </label>
+                                    </el-radio>
+                                </div>
+                            </div>
+
+                            <!--查询下部-->
+                            <div style="width: 100%;display: flex;align-items: center;justify-content: space-between">
+                                <div>
+                                    <el-select v-model="selectForm.origin" clearable filterable placeholder="出发城市">
+                                        <el-option
+                                                v-for="str in originCity"
+                                                :label="str.origin"
+                                                :value="str.origin">
+                                        </el-option>
+                                    </el-select>
+
+                                    <i class="el-icon-sort" style="transform:rotateX(180deg)rotate(90deg)" @click="[selectForm.origin,selectForm.end] = [selectForm.end,selectForm.origin]"></i>
+
+                                    <el-select v-model="selectForm.end" clearable filterable placeholder="到达城市">
+                                        <el-option
+                                                v-for="str in endCity"
+                                                :label="str.end"
+                                                :value="str.end">
+                                        </el-option>
+                                    </el-select>
+                                </div>
+
+                                <div>
+                                    <el-date-picker
+                                            v-model="selectForm.startDate"
+                                            :clearable="false"
+                                            :editable="false"
+                                            type="date"
+                                            placeholder="出发日期"
+                                            format="yyyy 年 MM 月 dd 日"
+                                            value-format="yyyy-MM-dd"
+                                            :picker-options="startPickerOptions">
+                                    </el-date-picker>
+                                    <el-date-picker
+                                            v-model="selectForm.endDate"
+                                            :clearable="false"
+                                            :editable="false"
+                                            type="date"
+                                            placeholder="返程日期"
+                                            :disabled="!returnStatus"
+                                            format="yyyy 年 MM 月 dd 日"
+                                            value-format="yyyy-MM-dd"
+                                            :picker-options="endPickerOptions">
+                                    </el-date-picker>
+
+                                </div>
+
+                                <!--                            <el-col span="2">-->
+                                <el-button type="primary" style="width: 120px;" @click="getByCondition">查询</el-button>
+                                <!--                            </el-col>-->
+                                <!--                            style="width: 100%"-->
+                            </div>
+
+                        </div>
+
+                    </el-card>
+
+                </el-main>
+
+                <!--查询后展示-->
+                <div v-if="queryState">
+                    <!--条件框-->
+                    <el-main style="padding-bottom: 10px;">
+                        <el-card class="box-card" :body-style="{padding: '0 20px'}">
+
+                            <el-table
+                                    style="width: 100%;height: 55px"
+                                    @sort-change="sortChange"
+
+                            >
+                                <el-table-column
+                                        prop="startTime"
+                                        label="起飞时间"
+                                        sortable
+                                        align="center">
+                                </el-table-column>
+                                <el-table-column
+                                        prop="endTime"
+                                        label="降落时间"
+                                        sortable
+                                        align="center">
+                                </el-table-column>
+                                <el-table-column
+                                        prop="process"
+                                        label="航程时间"
+                                        sortable
+                                        align="center">
+                                </el-table-column>
+                                <el-table-column
+                                        prop="price"
+                                        label="价格优先"
+                                        sortable
+                                        align="center">
+                                </el-table-column>
+                            </el-table>
+
+                        </el-card>
+                    </el-main>
+
+                    <!--展示框-->
+                    <el-main style="padding-top: 10px;">
+                        <!--遍历框-->
+                        <div>
+
+                            <el-card class="box-card" style="margin-bottom: 10px" v-for="ticket in tickets">
+                                <!--列表外壳-->
+                                <div style="display: flex;justify-content: space-between;align-items: center;">
+                                    <!--航班班次-->
+                                    <div style="display: flex;flex-direction: column;align-items: center">
+<!--                                        <p style="font-size: 16px;margin-top: 0px;margin-bottom: 20px;color: #01D0F4">波音707</p>-->
+                                        <p class="nobe">{{ticket.shift}}</p>
+                                    </div>
+                                    <!--起点终点-->
+                                    <div style="display: flex;justify-content: space-between;align-items: center;">
+                                        <!--起点-->
+                                        <div style="margin: 0px 20px;text-align: center">
+                                            <div>
+                                                <p class="mytime">{{TimeConversion(ticket.startTime)}}</p>
+                                            </div>
+                                            <div>
+                                                <p class="didian">{{ticket.origin}}</p>
+                                            </div>
+                                        </div>
+                                        <!--中间连接-->
+                                        <div style="width: 100px;height: 1px;background: #C8C8C8;position: relative">
+                                            <div style="
+                                                    width: 8px;
+                                                    float: right;
+                                                    border-top: 1px solid #C8C8C8;
+                                                    margin-top: -2px;
+                                                    transform: rotate(29deg)">
+                                            </div>
+                                            <p style="
+                                                    padding: 0px 6px;
+                                                    color: #969696;
+                                                    background: #ffffff;
+                                                    position: absolute;
+                                                    left: 50%;
+                                                    transform: translateX(-50%) translateY(-50%);
+                                                    margin: 0;"
+                                            >
+                                                {{getProcess(ticket.startTime, ticket.endTime)}}
+                                            </p>
+                                        </div>
+                                        <!--终点-->
+                                        <div style="margin: 0px 20px;text-align: center">
+                                            <div>
+                                                <p class="mytime">{{TimeConversion(ticket.endTime)}}</p>
+                                            </div>
+                                            <div>
+                                                <p class="didian">{{ticket.end}}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!--价格 购买-->
+                                    <!--<div style="display:flex;">
+                                        <div style="display: flex;flex-direction: column;align-items: center">
+                                            <p style="color: #3F51B5;font-size: 18px;margin: 0px">经济舱</p>
+                                            <div style="display: flex;align-items: flex-end;">
+                                                <p class="jiage" style="font-size: 18px;margin-bottom: 4px">￥</p>
+                                                <p class="jiage">{{ticket.price}}</p>
+                                                <p class="jiage" style="font-size: 16px;margin-bottom: 4px">起</p>
+                                            </div>
+                                            <el-tooltip content="剩x张" disabled placement="right" :manual="false" :value="false">
+                                                <button style="margin: 0px;width: 100%;height: 36px;" class="buy" @click="toBuy(ticket.tid)">{{ !selectReturnStatus ? "购买" : "返程"}}
+                                                </button>
+                                            </el-tooltip>
+                                        </div>
+                                        <div style="display: flex;flex-direction: column;align-items: center;margin: 0px 5px">
+                                            <p style="color: #03A9E1;font-size: 18px;margin: 0px">头等舱</p>
+                                            <div style="display: flex;align-items: flex-end;">
+                                                <p class="jiage" style="font-size: 18px;margin-bottom: 4px">￥</p>
+                                                <p class="jiage">{{ticket.price * 2}}</p>
+                                                <p class="jiage" style="font-size: 16px;margin-bottom: 4px">起</p>
+                                            </div>
+                                            <el-tooltip content="剩x张" disabled placement="right" :manual="false" :value="false">
+                                                <button style="margin: 0px;width: 100%;height: 36px;" class="buy" @click="toBuy(ticket.tid)">{{ !selectReturnStatus ? "购买" : "返程"}}
+                                                </button>
+                                            </el-tooltip>
+                                        </div>
+                                        <div style="display: flex;flex-direction: column;align-items: center">
+                                            <p style="color: #CFCF4E;font-size: 18px;margin: 0px">公务舱</p>
+                                            <div style="display: flex;align-items: flex-end;">
+                                                <p class="jiage" style="font-size: 18px;margin-bottom: 4px">￥</p>
+                                                <p class="jiage">{{ticket.price * 3}}</p>
+                                                <p class="jiage" style="font-size: 16px;margin-bottom: 4px">起</p>
+                                            </div>
+                                            <el-tooltip content="剩x张" disabled placement="right" :manual="false" :value="false">
+                                                <button style="margin: 0px;width: 100%;height: 36px;" class="buy" @click="toBuy(ticket.tid)">{{ !selectReturnStatus ? "购买" : "返程"}}
+                                                </button>
+                                            </el-tooltip>
+                                        </div>
+                                    </div>-->
+
+                                    <!--价格 购买 旧版-->
+                                    <div style="display: flex;align-items: flex-end;">
+                                        <p class="jiage" style="font-size: 18px;margin-bottom: 4px">￥</p>
+                                        <p class="jiage">{{ticket.price}}</p>
+                                        <p class="jiage" style="font-size: 16px;margin-bottom: 4px">起</p>
+                                        <el-tooltip content="剩x张" disabled placement="right" :manual="false" :value="false">
+                                            <button class="buy" @click="toBuy(ticket.tid)">{{ !selectReturnStatus ? "购买" : "返程"}}
+                                            </button>
+                                        </el-tooltip>
+                                    </div>
+
+                                </div>
+                            </el-card>
+
+                        </div>
+                    </el-main>
+                </div>
+            </div>
+
+            <!--选择乘机人页面-->
+            <div v-if="active==1">
+                <!--主体-->
+                <el-container>
+
+                    <!--主体左侧-->
+                    <el-main style="padding: 20px 10px">
+                        <el-card class="box-card">
+
+                            <!--步骤条-->
+                            <el-card class="box-card">
+                                <el-steps :active="active" finish-status="success" align-center>
+                                    <el-step title="选择航班"></el-step>
+                                    <el-step title="选择乘机人"></el-step>
+                                    <el-step title="支付"></el-step>
+                                    <el-step title="支付完成"></el-step>
+                                </el-steps>
+                            </el-card>
+
+                            <!--乘车人增添-->
+                            <el-main style="padding: 20px 10px;">
+
+                                <!--条件查询-->
+                                <el-form :inline="true" ref="formPasSelects" :model="formPasSelect" class="demo-form-inline"
+                                         style="text-align: center" :rules="psgformrulemohu">
+
+
+                                    <el-form-item label="姓名" prop="psName">
+                                        <el-input placeholder="乘车人姓名" v-model="formPasSelect.psName"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="证件类型" >
+                                        <el-select placeholder="证件类型" v-model="formPasSelect.cardType">
+                                            <el-option label="居民身份证" value="居民身份证"></el-option>
+                                            <el-option label="港澳居民来往内地通行证" value="港澳居民来往内地通行证"></el-option>
+                                            <el-option label="中华人民共和国来往港澳通行证" value="中华人民共和国来往港澳通行证"></el-option>
+                                            <el-option label="台湾居民来往大陆通行证" value="台湾居民来往大陆通行证"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item label="证件号" prop="idCard">
+                                        <el-input placeholder="证件号" v-model="formPasSelect.idCard"></el-input>
+                                    </el-form-item>
+
+                                    <el-form-item>
+                                        <el-button type="success" plain icon="el-icon-plus"
+                                                   @click="dialogVisibleAdd = true">添加
+                                        </el-button>
+                                        <el-button icon="el-icon-refresh-right" @click="Reset">重置</el-button>
+                                        <el-button type="primary" icon="el-icon-search" @click="psgSelectCondition('formPasSelects')">查询
+                                        </el-button>
+                                    </el-form-item>
+
+                                </el-form>
+
+                                <!--表格-->
+                                <el-table
+                                        :data="psgtableData"
+                                        stripe
+                                        style="width: 100%"
+                                        @selection-change="handleSelectionChange">
+                                    <el-table-column
+                                            type="selection"
+                                            width="55">
+                                    </el-table-column>
+                                    <el-table-column
+                                            type="index"
+                                            width="50"
+                                            align="center">
+                                    </el-table-column>
+
+                                    <el-table-column
+                                            prop="psName"
+                                            label="乘车人姓名"
+                                            sortable>
+                                    </el-table-column>
+
+                                    <el-table-column
+                                            prop="cardType"
+                                            label="证件类型"
+                                            sortable>
+                                    </el-table-column>
+
+                                    <el-table-column
+                                            prop="idCard"
+                                            label="证件号"
+                                            sortable>
+                                    </el-table-column>
+
+
+                                    <el-table-column
+                                            align="center"
+                                            label="操作">
+                                        <!--加了这个标签，slot-scope属性然后在按钮调用就能获取当前行的数据                            -->
+                                        <template slot-scope="scope">
+                                            <el-button type="primary" icon="el-icon-edit" circle size="medium"
+                                                       @click="psgEdit(scope.row)"></el-button>
+                                            <el-button type="danger" icon="el-icon-delete" circle size="medium"
+                                                       @click="deletePassenger(scope.row)"></el-button>
+                                        </template>
+
+                                    </el-table-column>
+                                </el-table>
+                            </el-main>
+
+                        </el-card>
+                    </el-main>
+
+                    <!--主体右侧-->
+                    <el-aside style="padding: 20px 10px">
+                        <el-card class="box-card">
+
+                            <!--遍历卡片-->
+                            <div v-for="tk in tks" >
+                                <el-card class="box-card">
+                                    <div style="display: flex;flex-direction: column">
+                                        <!--信息上部-->
+                                        <div style="margin-bottom: 10px">
+                                            <span style="color: #8c939d;font-size: 14px">
+                                                {{tk.shift}}
+                                            </span>
+                                            <span style="color: #8c939d;font-size: 14px">
+                                                {{tk.date}}
+                                            </span>
+                                        </div>
+                                        <!--信息下部-->
+                                        <div style="display:flex;align-items: center;justify-content: space-between">
+                                            <!--起点 时间-->
+                                            <div style="display: flex;flex-direction: column;align-items: center">
+                                                <span style="color: black;font-size: 15px">
+                                                    {{tk.startTime}}
+                                                </span>
+                                                <span style="color: #666666;font-size: 13px">
+                                                    {{tk.origin}}
+                                                </span>
+                                            </div>
+                                            <!--中间-->
+                                            <div style="width: 80px;height: 1px;background: #C8C8C8;position: relative">
+                                                <div style="
+                                                    width: 8px;
+                                                    float: right;
+                                                    border-top: 1px solid #C8C8C8;
+                                                    margin-top: -2px;
+                                                    transform: rotate(29deg)">
+                                                </div>
+                                                <p style="
+                                                    padding: 0px 6px;
+                                                    color: #969696;
+                                                    background: #ffffff;
+                                                    position: absolute;
+                                                    left: 50%;
+                                                    transform: translateX(-50%) translateY(-50%);
+                                                    margin: 0;"
+                                                >
+                                                    {{getProcess(tk.startTime,tk.endTime)}}
+                                                    <!--                                                    {{getProcess(tk.startTime,tk.endTime)}}-->
+                                                </p>
+                                            </div>
+                                            <!--终点 时间-->
+                                            <div style="display: flex;flex-direction: column;align-items: center">
+                                                <span style="color: black;font-size: 15px">
+                                                    {{tk.endTime}}
+                                                </span>
+                                                <span style="color: #666666;font-size: 13px">
+                                                    {{tk.end}}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </div>
+                            <!--卡片统计-->
+                            <div style="display: flex;flex-direction: column;margin-top: 20px">
+                                <div style="display: flex;justify-content: space-between;align-items: center;padding: 0px 5px">
+                                    <span style="font-size: 16px;color: #303133">总票价</span>
+                                    <span style="font-size: 17px">{{priceSum()}}</span>
+                                </div>
+                                <div style="display: flex;justify-content: space-between;align-items: center;padding: 10px 5px">
+                                    <span style="font-size: 16px;color: #303133">乘机人</span>
+                                    <span style="font-size: 17px">×{{multipleSelection.length}}</span>
+                                </div>
+                                <div style="display: flex;justify-content: space-between;align-items: center;padding: 0px 5px">
+                                    <span style="font-size: 20px;font-weight: bold">总 价</span>
+                                    <span style="font-size: 22px;color: red">￥{{priceSum()*multipleSelection.length}}</span>
+                                </div>
+                            </div>
+                            <!--卡片按钮-->
+                            <button class="buy" style="width: 100%;margin: 20px 0px 0px" @click="upOrder(0,0)">确认提交</button>
+                        </el-card>
+                    </el-aside>
+
+                </el-container>
+            </div>
+
+            <!--支付页面-->
+            <div v-if="active==2">
+                <!--主体-->
+                <el-container>
+
+                    <!--主体左侧-->
+                    <el-main style="padding: 20px 10px">
+                        <el-card class="box-card">
+
+                            <!--步骤条-->
+                            <el-card class="box-card">
+                                <el-steps :active="active" finish-status="success" align-center>
+                                    <el-step title="选择航班"></el-step>
+                                    <el-step title="选择乘机人"></el-step>
+                                    <el-step title="支付出票"></el-step>
+                                    <el-step title="完成订单"></el-step>
+                                </el-steps>
+                            </el-card>
+
+                            <!--订单展示-->
+                            <el-main style="padding: 20px 10px;">
+
+                                <!--订单卡片-->
+                                <el-card class="box-card" v-for="(ord,i) in orders" :key="i">
+                                            <div style="display: flex;align-items: center;min-width: 640px">
+                                                <!--机票基本信息-->
+                                                <div style="display: flex;flex-direction: column;width: 45%;">
+                                                    <!--信息上部-->
+                                                    <div style="margin-bottom: 5px">
+                                                    <span style="color: #82848a;font-size: 17px;margin-left: 10px">
+                                                        {{ord.ticket.shift}}
+                                                    </span>
+                                                        <span style="color: #82848a;font-size: 17px;margin-left: 15px">
+                                                        {{ord.ticket.date}}
+                                                    </span>
+                                                    </div>
+                                                    <!--信息下部-->
+                                                    <div style="display:flex;align-items: center;justify-content: space-between">
+                                                        <!--起点 时间-->
+                                                        <div style="display: flex;flex-direction: column;align-items: center">
+                                                <span style="color: black;font-size: 24px">
+                                                    {{ord.ticket.startTime}}
+                                                </span>
+                                                            <span style="color: #666666;font-size: 15px">
+                                                    {{ord.ticket.origin}}
+                                                </span>
+                                                        </div>
+                                                        <!--中间-->
+                                                        <div style="width: 150px;height: 1px;background: #C8C8C8;position: relative">
+                                                            <div style="
+                                                    width: 8px;
+                                                    float: right;
+                                                    border-top: 1px solid #C8C8C8;
+                                                    margin-top: -2px;
+                                                    transform: rotate(29deg)">
+                                                            </div>
+                                                            <p style="
+                                                    padding: 0px 6px;
+                                                    color: #969696;
+                                                    background: #ffffff;
+                                                    position: absolute;
+                                                    left: 50%;
+                                                    transform: translateX(-50%) translateY(-50%);
+                                                    margin: 0;"
+                                                            >
+                                                                {{getProcess(ord.ticket.startTime,ord.ticket.endTime)}}
+                                                                <!--{{getProcess(tk.startTime,tk.endTime)}}-->
+                                                            </p>
+                                                        </div>
+                                                        <!--终点 时间-->
+                                                        <div style="display: flex;flex-direction: column;align-items: center">
+                                                <span style="color: black;font-size: 24px">
+                                                    {{ord.ticket.endTime}}
+                                                </span>
+                                                            <span style="color: #666666;font-size: 15px">
+                                                    {{ord.ticket.end}}
+                                                </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!--详细订单信息-->
+                                                <div style="width: 55%;display: flex;align-items: center;justify-content: space-between">
+                                                    <div style="text-align: center;flex: 1;display: flex;flex-direction: column">
+                                                        <span style="margin-bottom: 10px">{{ord.passenger.psName+" 座位:"+ord.seat.passageSeat}}</span>
+                                                        <span style="font-size: 32px;color: red">￥{{ord.ticket.price}}</span>
+                                                    </div>
+                                                    <div>
+                                                        <div style="margin-bottom: 10px;display: flex;flex-direction: column;align-items: flex-end;">
+                                                            <span style="font-size: 14px;">订单编号{{ord.onum}}</span>
+                                                            <span style="font-size: 14px;">下单时间{{ord.time}}</span>
+                                                        </div>
+                                                        <div style="float: right;">
+                                                            <el-button type="info" plain @click="expay(ord.oid,i)">取消订单</el-button>
+                                                            <button class="buy" style="margin: 0px" @click="payone(ord.oid,i)">立即支付</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                        </el-card>
+
+
+                            </el-main>
+
+                        </el-card>
+                    </el-main>
+
+                    <!--主体右侧-->
+                    <el-aside style="padding: 20px 10px">
+                        <el-card class="box-card">
+
+                            <!--遍历卡片-->
+                            <div v-for="tk in tks" >
+                                <el-card class="box-card">
+                                    <div style="display: flex;flex-direction: column">
+                                        <!--信息上部-->
+                                        <div style="margin-bottom: 10px">
+                                            <span style="color: #8c939d;font-size: 14px">
+                                                {{tk.shift}}
+                                            </span>
+                                            <span style="color: #8c939d;font-size: 14px">
+                                                {{tk.date}}
+                                            </span>
+                                        </div>
+                                        <!--信息下部-->
+                                        <div style="display:flex;align-items: center;justify-content: space-between">
+                                            <!--起点 时间-->
+                                            <div style="display: flex;flex-direction: column;align-items: center">
+                                                <span style="color: black;font-size: 15px">
+                                                    {{tk.startTime}}
+                                                </span>
+                                                <span style="color: #666666;font-size: 13px">
+                                                    {{tk.origin}}
+                                                </span>
+                                            </div>
+                                            <!--中间-->
+                                            <div style="width: 80px;height: 1px;background: #C8C8C8;position: relative">
+                                                <div style="
+                                                    width: 8px;
+                                                    float: right;
+                                                    border-top: 1px solid #C8C8C8;
+                                                    margin-top: -2px;
+                                                    transform: rotate(29deg)">
+                                                </div>
+                                                <p style="
+                                                    padding: 0px 6px;
+                                                    color: #969696;
+                                                    background: #ffffff;
+                                                    position: absolute;
+                                                    left: 50%;
+                                                    transform: translateX(-50%) translateY(-50%);
+                                                    margin: 0;"
+                                                >
+                                                    {{getProcess(tk.startTime,tk.endTime)}}
+                                                    <!--                                                    {{getProcess(tk.startTime,tk.endTime)}}-->
+                                                </p>
+                                            </div>
+                                            <!--终点 时间-->
+                                            <div style="display: flex;flex-direction: column;align-items: center">
+                                                <span style="color: black;font-size: 15px">
+                                                    {{tk.endTime}}
+                                                </span>
+                                                <span style="color: #666666;font-size: 13px">
+                                                    {{tk.end}}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </el-card>
+                            </div>
+                            <!--卡片统计-->
+                            <div style="display: flex;flex-direction: column;margin-top: 20px">
+                                <div style="display: flex;justify-content: space-between;align-items: center;padding: 0px 5px">
+                                    <span style="font-size: 20px;font-weight: bold">总 价</span>
+                                    <span style="font-size: 22px;color: red">￥{{allp()}}</span>
+                                </div>
+                            </div>
+                            <!--卡片按钮-->
+                            <button class="buy" style="width: 100%;margin: 20px 0px 0px" @click="payall">全部支付</button>
+                        </el-card>
+                    </el-aside>
+
+                </el-container>
+            </div>
+
+            <!--支付完成页面-->
+            <div v-if="active==4">
+                <!--主体-->
+                <el-container>
+
+                    <!--主体左侧-->
+                    <el-main style="padding: 20px 10px">
+                        <el-card class="box-card">
+
+                            <!--步骤条-->
+                            <el-card class="box-card">
+                                <el-steps :active="active" finish-status="success" align-center>
+                                    <el-step title="选择航班"></el-step>
+                                    <el-step title="选择乘机人"></el-step>
+                                    <el-step title="支付出票"></el-step>
+                                    <el-step title="完成订单"></el-step>
+                                </el-steps>
+                            </el-card>
+
+                            <!--成功页面-->
+                            <el-main style="padding: 20px 10px;">
+
+                                <div>
+                                    <el-alert
+                                            title="恭喜你，已完成订单"
+                                            type="success"
+                                            description="订单全部操作成功，可到我的订单查看订单信息"
+                                            show-icon
+                                            :closable="false"
+                                            style="height: 300px;">
+                                    </el-alert>
+                                </div>
+
+                            </el-main>
+
+                        </el-card>
+                    </el-main>
+
+                    <!--主体右侧-->
+                    <el-aside style="padding: 20px 10px">
+                        <el-card class="box-card">
+                            <el-alert
+                                    title="订单已完成"
+                                    type="success"
+                                    description="点击下面按钮可查看订单或者返回首页哦！"
+                                    :closable="false"
+                                    style="height: 318px;">
+                            </el-alert>
+
+                            <!--卡片按钮-->
+                            <a href="/PlaneTicket/userPage/userOrder.html">
+                                <el-button type="primary" plain style="width: 100%;margin: 20px 0px 0px">查看订单</el-button>
+                            </a>
+                            <a href="/PlaneTicket">
+                                <el-button type="success" style="width: 100%;margin: 20px 0px 0px">返回首页</el-button>
+                            </a>
+                        </el-card>
+                    </el-aside>
+
+                </el-container>
+            </div>
+
+        </el-container>
+
+        <!--添加弹窗-->
+        <el-dialog
+                title="添加"
+                :visible.sync="dialogVisibleAdd"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="formAdd" :model="formAdd" :label-position="labelPosition" label-width="80px" :rules="psgformrule">
+
+                <el-form-item label="姓名" prop="psName">
+                    <el-input v-model="formAdd.psName" placeholder="乘车人姓名"></el-input>
+                </el-form-item>
+                <el-form-item label="证件类型" prop="cardType">
+                    <el-select placeholder="证件类型" v-model="formAdd.cardType">
+                        <el-option label="居民身份证" value="居民身份证"></el-option>
+                        <el-option label="港澳居民来往内地通行证" value="港澳居民来往内地通行证"></el-option>
+                        <el-option label="中华人民共和国来往港澳通行证" value="中华人民共和国来往港澳通行证"></el-option>
+                        <el-option label="台湾居民来往大陆通行证" value="台湾居民来往大陆通行证"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="证件号" prop="idCard">
+                    <el-input placeholder="证件号" v-model="formAdd.idCard"></el-input>
+                </el-form-item>
+            </el-form>
+            <!--添加的按钮------------------->
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleAdd = false">取 消</el-button>
+                    <el-button type="primary" @click="addPassenger('formAdd')">确 定</el-button>
+                </span>
+
+        </el-dialog>
+
+        <!--编辑弹窗-->
+        <el-dialog
+                title="编辑"
+                :visible.sync="dialogVisibleEdit"
+                width="30%"
+                :before-close="handleClose">
+
+            <el-form ref="formEdit" :model="formEdit" :label-position="labelPosition" label-width="80px" :rules="psgformrule">
+
+                <el-form-item label="姓名" prop="psName">
+                    <el-input v-model="formEdit.psName" placeholder="乘车人姓名"></el-input>
+                </el-form-item>
+                <el-form-item label="证件类型" prop="cardType">
+                    <el-select placeholder="证件类型" v-model="formEdit.cardType">
+                        <el-option label="居民身份证" value="居民身份证"></el-option>
+                        <el-option label="港澳居民来往内地通行证" value="港澳居民来往内地通行证"></el-option>
+                        <el-option label="中华人民共和国来往港澳通行证" value="中华人民共和国来往港澳通行证"></el-option>
+                        <el-option label="台湾居民来往大陆通行证" value="台湾居民来往大陆通行证"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="证件号" prop="idCard">
+                    <el-input placeholder="证件号" v-model="formEdit.idCard"></el-input>
+                </el-form-item>
+            </el-form>
+            <!--修改确定-->
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleEdit = false">取 消</el-button>
+                    <el-button type="primary" @click="definiteEdit('formEdit')">确 定</el-button>
+                </span>
+
+
+        </el-dialog>
+
+        <!--登录注册弹窗-->
+        <el-dialog
+                title="登录/注册"
+                :visible.sync="dialogVisible"
+                width="530px"
+                :before-close="handleClose">
+
+            <el-tabs v-model="activeName" @tab-click="handleClick" :stretch="true">
+                <el-tab-pane label="登录" name="first">
+
+                    <el-form ref="userFormLogin" :model="userFormLogin" label-width="80px" :label-position="labelPosition" :rules="userFormrules">
+                        <el-form-item label="账号" prop="userName">
+                            <el-input v-model="userFormLogin.userName"></el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input show-password v-model="userFormLogin.password"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button style="width: 48%;" @click="activeName = 'second'">注册</el-button>
+                            <el-button type="primary" @click="login('userFormLogin')" style="width: 48%;margin-left: 2%">
+                                登录
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-tab-pane>
+
+                <el-tab-pane label="注册" name="second">
+
+                    <el-form ref="userForm" :model="userForm" label-width="80px" :label-position="labelPosition" :rules="userFormrules">
+                        <el-form-item label="账号" prop="userName">
+                            <el-input
+                                    placeholder="请输入账号"
+                                    v-model="userForm.userName"
+                                    clearable>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="用户名" prop="titleName">
+                            <el-input
+                                    placeholder="请输入用户名"
+                                    v-model="userForm.titleName"
+                                    clearable>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="密码" prop="password">
+                            <el-input placeholder="请输入密码" v-model="userForm.password" show-password></el-input>
+                        </el-form-item>
+                        <el-form-item label="性别" prop="sex">
+                            <el-select v-model="userForm.sex" placeholder="性别">
+                                <el-option label="男" value="男"></el-option>
+                                <el-option label="女" value="女"></el-option>
+                            </el-select>
+                        </el-form-item>
+
+                        <el-form-item label="电话号码" prop="phone">
+                            <el-input v-model="userForm.phone" placeholder="电话号码"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="出生日期" prop="birthday">
+                            <el-input type="date" v-model="userForm.birthday" placeholder="出生日期"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="邮箱" prop="email">
+                            <el-input v-model="userForm.email" placeholder="邮箱"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button style="width: 48%;" @click="activeName = 'first'">返回</el-button>
+                            <el-button type="primary" style="width: 48%;margin-left: 2%" @click="register('userForm')">注册
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+
+                </el-tab-pane>
+            </el-tabs>
+
+            <!--<span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+            </span>-->
+        </el-dialog>
+
+        <!--用户抽屉-->
+        <el-drawer
+                :visible.sync="drawer"
+                :before-close="handleClose"
+                size="200px">
+            <span slot="title">
+                <div v-show="true" style="display: flex;align-items: center;justify-content: center">
+                    <el-link type="primary" :underline="false" style="margin-left: 10px" @click="drawer = true">
+                        <el-avatar :src="circleUrl"
+                                   style="transform: translateX(-120%) translateY(-50%);position: absolute;top: 50%;"></el-avatar>
+                        {{titleNameed}}
+                    </el-link>
+                </div>
+            </span>
+            <div style="width: 100%;height: 100%;display: flex;justify-content: space-between;align-items: center;flex-direction: column">
+                <div style="width: 100%;display: flex;justify-content: center;align-items: center;flex-direction: column">
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/Userpersonal.html">
+                        <i class="el-icon-user" style="font-size: 18px">个人中心</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/userOrder.html">
+                        <i class="el-icon-s-order" style="font-size: 18px">订单管理</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/User_passengers.html">
+                        <i class="el-icon-phone-outline" style="font-size: 18px">乘机人管理</i>
+                    </el-link>
+                    <el-link :underline="false" style="margin-bottom: 30px" href="userPage/User_changepassword.html">
+                        <i class="el-icon-lock" style="font-size: 18px">修改密码</i>
+                    </el-link>
+                </div>
+                <div>
+                    <el-link :underline="false" type="primary">
+                        <i class="el-icon-close" style="font-size: 18px;margin-bottom: 30px" @click="quit">退出</i>
+                    </el-link>
+                </div>
+            </div>
+        </el-drawer>
+
+        <!--模拟支付-->
+        <el-dialog
+                title="支付"
+                :visible.sync="dialogVisibleZF"
+                width="480px"
+                :before-close="handleClose">
+            <div style="display: flex">
+                <el-image
+                        style="width: 200px; height: 200px"
+                        :src="ewmurl"
+                        fit="fit"></el-image>
+                <div style="width: 200px; height: 200px;padding: 10px 20px">
+                    <span style="font-size: 18px">请尽快完成支付！<br>请使用微信支付或者支付宝进行支付，支付完成后点击已支付进行刷新！</span>
+                </div>
+
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisibleZF = false">取 消</el-button>
+                <el-button type="primary" @click="topay">已支付</el-button>
+          </span>
+        </el-dialog>
+
+    </div>
+
+</div>
+
+<script src="js/axios-0.18.0.js"></script>
+<script src="js/vue.js"></script>
+<script src="element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+
+<script>
+    new Vue({
+        el: "#app",
+        data() {
+            return {
+                //是否第一次登录检查
+                firstck:0,
+                //登录后用户名
+                titleNameed:'',
+                //选中机票数组
+                tks: [],
+                //选择机票id
+                tids:[],
+                //选中乘机人数组
+                psgs: [111, 222],
+                // 地址选择器数据
+                //出发城市数据
+                originCity:[],
+                //到达城市数据
+                endCity:[],
+                //当前选择内容
+                selectForm: {
+                    // 地址选择器内容记录
+                    origin: '',
+                    end: '',
+                    // 日期选择器内容记录
+                    startDate: new Date().getFullYear() + "-" + (Number(new Date().getMonth()) + 1) + "-" + new Date().getDate(),
+                    endDate: '',
+                },
+                //记录当前查询内容
+                selectFormed: {
+                    // 地址选择器内容记录
+                    origin: '',
+                    end: '',
+                    // 日期选择器内容记录
+                    startDate: '',
+                    endDate: '',
+                },
+                // 单选标签
+                radio: '1',
+                // 是否往返选择
+                //选择器状态
+                returnStatus: false,
+                //当前进行状态
+                selectReturnStatus: false,
+                //当前查询状态
+                recordReturnStatus: false,
+                // 图片模式
+                fit: 'cover',
+                // 头像图片路径
+                circleUrl: 'img/usertx.png',
+                logoUrl: 'img/logo.png',
+                // 登录弹窗状态
+                dialogVisible: false,
+                // 登录弹窗tab默认选择
+                activeName: 'first',
+                // 密码内容
+                input: '',
+                // 登录注册表单数据
+                userForm: {
+                    uid: '',
+                    userName:'',
+                    titleName:'',
+                    password: '',
+                    sex: '',
+                    phone: '',
+                    birthday: '',
+                    email: ''
+                },
+                //用户的信息的验证
+                userFormrules:{
+                    userName:[
+                        { required: true, message: '请输入账号名', trigger: 'blur' },
+                        { pattern:/^[0-9_a-zA-Z]{1,}$/, message: "请输入数字，字母，下划线（至少包含其中一种,）", trigger: "blur" },
+                        { max:10, message: '长度为10位', trigger: 'blur' }
+                    ],
+                    titleName:[
+                        { required: true, message: '请输入用户名', trigger: 'blur' },
+                        { pattern:/^[0-9_a-zA-Z\u4e00-\u9fa5]{1,}$/, message: "请输入中文,数字，字母，下划线（至少包含其中一种）", trigger: "blur" },
+                        { max:10, message: '长度为10位', trigger: 'blur' }
+                    ],
+                    password:[
+                        { required: true, message: '请输入密码', trigger: 'blur' },
+                        { pattern:/^[0-9a-zA-Z]{1,}$/, message: "请输入输入数字，字母（至少包含其中一种）", trigger: "blur" },
+                        { max:10, message: '长度为10位', trigger: 'blur' }
+                    ],
+                    sex:[
+                        { required: true, message: '请输入性别', trigger: 'blur' },
+                    ],
+                    phone:[
+                        { required: true, message: '请输入手机号', trigger: 'blur' },
+                        { pattern:/^1[23456789]\d{9}$/, message: "手机号格式不对(11位)", trigger: "blur" },
+                    ],
+                    birthday:[
+                        { required: true, message: '请输入出生日期', trigger: 'blur' },
+                    ],
+                    email:[
+                        { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+                        { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+                    ]
+                },
+                userFormLogin: {
+                    uid: '',
+                    userName:'',
+                    titleName:'',
+                    password: '',
+                    sex: '',
+                    phone: '',
+                    birthday: '',
+                    email: ''
+                },
+                //确认密码数据
+                confirmPassword:'',
+                // 表单样式
+                labelPosition: 'right',
+                // 导航栏index值
+                activeIndex: '/PlaneTicket',
+                //抽屉状态
+                drawer: false,
+                //用户是否登录
+                userStatus: false,
+                //查询状态
+                queryState: false,
+                //机票对象数组
+                tickets: [{
+                    tid: '',
+                    shift: '',
+                    origin: '',
+                    end: '',
+                    date: '',
+                    startTime: '',
+                    endTime: '',
+                    price: ''
+                }],
+                //日期选择器方法
+                startPickerOptions: this.startPicker(),
+                endPickerOptions: this.endPicker(),
+                //步骤条进度
+                active: 0,
+                //乘机人条件查询
+                formPasSelect: {
+                    psName: '',
+                    cardType: '',
+                    idCard: ''
+                },
+                //乘机人添加窗口状态
+                dialogVisibleAdd: false,
+                //乘机人修改窗口状态
+                dialogVisibleEdit: false,
+                //乘机人添加窗口数据
+                formAdd: {
+                    psName: '',
+                    cardType: '',
+                    idCard: ''
+                },
+                //乘机人修改窗口数据
+                formEdit: {
+                    psName: '',
+                    cardType: '',
+                    idCard: ''
+                },
+                psgformrulemohu: {
+                    psName:[
+                        { pattern:/^[a-zA-Z\u4e00-\u9fa5]{0,}$/, message: "请输入中文，字母", trigger: "blur" },
+                    ],
+                    idCard:[
+                        { pattern: /[0-9]{1,}/,
+                            message: '证件号码格式有误！',
+                            trigger: 'blur',
+                        }
+                    ],
+                },
+                psgformrule: {
+                    psName:[
+                        { required: true, message: '请输入姓名', trigger: 'blur' },
+                        { pattern:/^[a-zA-Z\u4e00-\u9fa5]{0,}$/, message: "请输入中文，字母", trigger: "blur" },
+                    ],
+                    idCard:[
+                        { required: true, message: '请输入证件号码', trigger: 'blur' },
+                        { pattern: /(^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$)|(^[1-9]\d{5}\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{2}$)/,
+                            message: '证件号码格式有误！',
+                            trigger: 'blur',
+                        }
+                    ],
+                    cardType:[
+                        { required: true, message: '请选择证件类型', trigger: 'blur' }, ]
+                },
+                //乘机人表格数据
+                psgtableData: [],
+                //支付二维码
+                ewmurl: 'img/paypc.jpg',
+                //支付弹窗状态
+                dialogVisibleZF: false,
+                //选择乘机人数组
+                multipleSelection:[],
+                //订单id
+                oids:[],
+                //订单对象数组
+                orders:[],
+                //支付中oid
+                paying:[],
+                //支付的订单位置
+                payingindex:-1,
+                //乘机人模块
+                //用户信息
+                user:{
+                    uid: '',
+                    userName:'',
+                    titleName:'',
+                    password: '',
+                    sex: '',
+                    phone: '',
+                    birthday: '',
+                    email: ''
+                },
+            };
+        },
+        created() {
+            this.ckLogin();
+            this.getOriginCity();
+            this.getEndCity();
+        },
+        methods: {
+            //检查登录
+            ckLogin(){
+                axios.get('/PlaneTicket/user/users/check').then((res)=>{
+                  console.log("user"+res.data);
+                  if(res.data != null && res.data != ''){
+                      this.userStatus = true;
+                      this.titleNameed = res.data;
+                      this.dialogVisible = false;
+                  }else{
+                      if(this.firstck == 0){
+                          this.firstck = 1;
+                      }else {
+                          this.dialogVisible = true;
+                      }
+                  }
+              });
+            },
+            //获取出发城市
+            getOriginCity() {
+                axios.get('/PlaneTicket/tickets/city/origin').then((res)=>{
+                    this.originCity = res.data;
+                });
+            },
+            //获取到达城市
+            getEndCity() {
+                axios.get('/PlaneTicket/tickets/city/end').then((res)=>{
+                    this.endCity = res.data;
+                });
+            },
+            //购买按钮
+            toBuy(tid) {
+                axios.get('/PlaneTicket/user/users/check').then((res)=>{
+                    if(res.data != null && res.data != ''){
+                        this.userStatus = true;
+                        this.titleNameed = res.data;
+                        this.dialogVisible = false;
+                        if (!this.selectReturnStatus) {
+                            //查余票
+                            axios.get('/PlaneTicket/user/seats/ckseat/'+tid).then((res)=>{
+                                if(res.data){
+                                    //记录购买tid
+                                    if(this.recordReturnStatus){
+                                        this.tids[1] = tid;
+                                    }else {
+                                        this.tids[0] = tid;
+                                    }
+                                    //查询所选id的机票信息
+                                    for(let i = 0; i < this.tids.length; i++){
+                                        axios.get('/PlaneTicket/tickets/' + this.tids[i]).then((res)=>{
+                                            this.tks[i] = res.data;
+                                        });
+                                    }
+                                    //切换页面
+                                    this.active = 1;
+                                    this.dialogVisibleAdd = false;
+                                    //查询乘机人
+                                    this.seletByUid();
+                                } else{
+                                    this.$message.error('不好意思，余票不足！！');
+                                    if(this.recordReturnStatus){
+                                        //对返程刷新
+                                        axios.get('/PlaneTicket/tickets/' + this.selectFormed.end + '/' + this.selectFormed.origin + '/' + this.selectFormed.endDate).then((res) => {
+                                            this.tickets = res.data;
+                                        });
+                                    }else {
+                                        //去程进行刷新
+                                        axios.get('/PlaneTicket/tickets/' + this.selectFormed.origin + '/' + this.selectFormed.end + '/' + this.selectFormed.startDate).then((res) => {
+                                            this.tickets = res.data;
+                                        });
+                                    }
+                                }
+                            });
+                        } else {
+                            //查余票
+                            axios.get('/PlaneTicket/user/seats/ckseat/'+tid).then((res)=>{
+                                if(res.data){
+                                    //记录购买tid
+                                    this.tids[0] = tid;
+                                    //查询返程
+                                    axios.get('/PlaneTicket/tickets/' + this.selectFormed.end + '/' + this.selectFormed.origin + '/' + this.selectFormed.endDate).then((res) => {
+                                        this.selectReturnStatus = !this.selectReturnStatus;
+                                        this.tickets = res.data;
+                                    });
+                                } else{
+                                    this.$message.error('不好意思，余票不足！！');
+                                    //去程进行刷新
+                                    axios.get('/PlaneTicket/tickets/' + this.selectFormed.origin + '/' + this.selectFormed.end + '/' + this.selectFormed.startDate).then((res) => {
+                                        this.tickets = res.data;
+                                    });
+                                }
+                            });
+
+                        }
+                    }else{
+                        if(this.firstck == 0){
+                            this.firstck = 1;
+                        }else {
+                            this.dialogVisible = true;
+                        }
+                    }
+                });
+
+
+            },
+
+            //获取过程时间
+            getProcess(start, end) {
+                if(start != '' && end != '' && start != null && end != null){
+                    let starts = start.split(":");
+                    let ends = end.split(":");
+                    let h;
+                    let m;
+                    if (Number(ends[1]) < Number(starts[1])) {
+                        m = Number(ends[1]) + 60 - Number(starts[1]);
+                        h = Number(ends[0]) - 1 - Number(starts[0]);
+                    } else {
+                        m = Number(ends[1]) - Number(starts[1]);
+                        h = Number(ends[0]) - Number(starts[0]);
+                    }
+                    return h + "h" + m + "m";
+                }else {
+                    return "0h0m";
+                }
+
+            },
+            TimeConversion(trTime) {
+                //返回HH:mm时间格式
+                let times = trTime.split(":");
+                return times[0] + ":" + times[1];
+            },
+            //开关改变方法
+            switchChange() {
+                if (!this.returnStatus) {
+                    this.selectForm.endDate = '';
+                } else {
+                    this.selectForm.endDate = new Date(this.selectForm.startDate).getFullYear() + "-" + (Number(new Date(this.selectForm.startDate).getMonth()) + 1) + "-" + new Date(this.selectForm.startDate).getDate();
+                }
+            },
+            //出发日期限制
+            startPicker() {
+                _this = this;
+                return {
+                    disabledDate(time) {
+                        if (_this.selectForm.endDate != null && _this.selectForm.endDate != '') {
+                            return time.getTime() < Date.now() - 8.64e7 || time.getTime() > new Date(_this.selectForm.endDate).getTime();
+                        } else {
+                            // console.log(time.getTime(),time.getTime() + 30 * 24 * 3600 * 1000)
+                            return time.getTime() < Date.now() - 8.64e7 || time.getTime() > Date.now() + 30 * 24 * 3600 * 1000; //如果没有后面的-8.64e7就是不可以选择今天
+                        }
+                    },
+                }
+            },
+            //返程日期限制
+            endPicker() {
+                _this = this;
+                return {
+                    disabledDate(time) {
+                        return time.getTime() < new Date(_this.selectForm.startDate).getTime() - 1 * 24 * 3600 * 1000 || time.getTime() < Date.now() - 8.64e7 || time.getTime() > Date.now() + 30 * 24 * 3600 * 1000;
+                    }
+                }
+            },
+
+            //首页条件查询
+            getByCondition() {
+                if (this.selectForm.origin == null || this.selectForm.origin == '') {
+                    this.$message.error('出发城市不能为空哦！！');
+                } else if (this.selectForm.end == null || this.selectForm.end == '') {
+                    this.$message.error('到达城市不能为空哦！！');
+                } else if (this.selectForm.origin == this.selectForm.end) {
+                    this.$message.error('出发城市和到达城市不能为同一个地方哦！！');
+                } else {
+                    //进行查询
+                    axios.get('/PlaneTicket/tickets/' + this.selectForm.origin + '/' + this.selectForm.end + '/' + this.selectForm.startDate).then((res) => {
+                        this.selectFormed = JSON.parse(JSON.stringify(this.selectForm));
+                        this.selectReturnStatus = this.returnStatus;
+                        this.recordReturnStatus = this.returnStatus;
+                        this.tickets = res.data;
+                    }).finally(() => {
+                        this.queryState = true;
+                    });
+                }
+
+            },
+
+            // 登录弹窗关闭事件
+            handleClose(done) {
+                done();
+            },
+            // 登录弹窗tab点击事件
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            // 导航栏选择方法
+            handleSelect(routePath) {
+                location.href = routePath;
+            },
+            //筛选框 条件变化触发事件
+            sortChange(column) {
+                // console.log(column.prop, column.order);
+                if (this.recordReturnStatus && !this.selectReturnStatus) {
+                    axios.get('/PlaneTicket/tickets/' + this.selectFormed.end + '/' + this.selectFormed.origin + '/' + this.selectFormed.endDate + '/' + column.prop + '/' + column.order).then((res) => {
+                        this.tickets = res.data;
+                    });
+                } else {
+                    axios.get('/PlaneTicket/tickets/' + this.selectFormed.origin + '/' + this.selectFormed.end + '/' + this.selectFormed.startDate + '/' + column.prop + '/' + column.order).then((res) => {
+                        this.tickets = res.data;
+                    });
+                }
+            },
+            //登录按钮
+            login(form) {
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {                axios.get('/PlaneTicket/user/users/login?userName=' + this.userFormLogin.userName + '&password=' + this.userFormLogin.password).then((res) => {
+                        if(res.data){
+                            axios.get('/PlaneTicket/user/users/check').then((res)=>{
+                                if(res.data != null && res.data != ''){
+                                    this.userStatus = true;
+                                    this.titleNameed = res.data;
+                                    this.dialogVisible = false;
+                                    this.$message({
+                                        message: '恭喜你，登陆成功！',
+                                        type: 'success'
+                                    });
+                                }else{
+                                    this.$message.error('登录异常，请重新登录！');
+                                    if(this.firstck == 0){
+                                        this.firstck = 1;
+                                    }else {
+                                        this.dialogVisible = true;
+                                    }
+                                }
+                            });
+                        }else{
+                            this.$message.error('用户名密码不存在，请重新登录！');
+                        }
+                    });
+                    };
+                });
+            },
+            //选择乘机人方法
+            handleSelectionChange(val){
+                this.multipleSelection = val;
+            },
+            //乘机人界面提交订单
+            upOrder(t,p) {
+                //递归方式进行订单提交
+                //是否选择乘机人
+                if(this.multipleSelection.length > 0){
+                    //递归乘机人数组是否越界
+                    if(p < this.multipleSelection.length){
+                        axios.post('/PlaneTicket/user/orders/' + this.multipleSelection[p].pid + '/' + this.tks[t].tid).then((res) => {
+                            if (res.data == 0) {
+                                this.$notify.error({
+                                    title: '提交失败(余票不足)',
+                                    message: '乘客：' + this.multipleSelection[p].psName + '\n' +
+                                        '机票：' + this.tks[t].shift + '\n' +
+                                        this.tks[t].date + ' ' + this.tks[t].startTime + '\n' +
+                                        this.tks[t].origin + ' —＞ ' + this.tks[t].end,
+                                    duration: 6500
+                                });
+                                //切换页面
+                                if(t == this.tks.length-1 && p == this.multipleSelection.length-1){
+                                    if(this.orders.length > 0){
+                                        this.active = 2;
+                                    }else {
+                                        this.$message.error('提交失败，请重新选择！');
+                                    }
+                                }
+                            } else if (res.data == 1) {
+                                this.$notify.error({
+                                    title: '提交失败(重复购买)',
+                                    message: '乘客：' + this.multipleSelection[p].psName + '\n' +
+                                        '机票：' + this.tks[t].shift + '\n' +
+                                        this.tks[t].date + ' ' + this.tks[t].startTime + '\n' +
+                                        this.tks[t].origin + ' —＞ ' + this.tks[t].end,
+                                    duration: 6500
+                                });
+                                //切换页面
+                                if(t == this.tks.length-1 && p == this.multipleSelection.length-1){
+                                    if(this.orders.length > 0){
+                                        this.active = 2;
+                                    }else {
+                                        this.$message.error('提交失败，请重新选择！');
+                                    }
+                                }
+                            } else if (res.data > 1) {
+                                //提交成功记录oid
+                                axios.get('/PlaneTicket/user/orders/' + res.data).then((res) => {
+                                    this.orders.push(res.data);
+                                }).finally(()=>{
+                                    //切换页面
+                                    if(t == this.tks.length-1 && p == this.multipleSelection.length-1){
+                                        this.active = 2
+                                    }
+                                });
+                                this.$notify({
+                                    title: '提交成功',
+                                    message: '乘客：' + this.multipleSelection[p].psName + '\n' +
+                                        '机票：' + this.tks[t].shift + '\n' +
+                                        this.tks[t].date + ' ' + this.tks[t].startTime + '\n' +
+                                        this.tks[t].origin + ' —＞ ' + this.tks[t].end,
+                                    type: 'success',
+                                    duration: 6500
+                                });
+                            }
+                        }).finally(()=>{
+                            //下一次递归
+                            this.upOrder(t,p+1);
+                        });
+                    }else {
+                        //机票数组是否越界
+                        if(t < this.tks.length-1){
+                            this.upOrder(t+1,0);
+                        }
+                    }
+                }else {
+                    this.$message.error('请选择乘机人！');
+                }
+            },
+            //取消支付
+            expay(oid,i){
+                this.$confirm('确定要取消此订单吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.put('/PlaneTicket/user/orders/ex/'+oid).then((res)=>{
+                        if(res.data){
+                            this.orders.splice(i,1);
+                            this.$message({
+                                type: 'success',
+                                message: '取消提交成功!'
+                            });
+                        }else {
+                            this.$message.error('取消提交失败');
+                        }
+                    }).finally(()=>{
+                        if(this.orders.length == 0 || this.orders == null){
+                            this.active = 4;
+                        }
+                    });
+
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消操作'
+                    });
+                });
+            },
+            //支付一个
+            payone(oid,i){
+                this.dialogVisibleZF = true;
+                this.paying = [];
+                this.payingindex = -1;
+                this.paying.push(oid);
+                this.payingindex = i;
+            },
+            //支付所有
+            payall(){
+                this.dialogVisibleZF = true;
+                this.paying = [];
+                this.payingindex = -1;
+                for (let i = 0; i < this.orders.length; i++) {
+                    this.paying.push(this.orders[i].oid);
+                }
+            },
+            //订单计算总价
+            allp(){
+                let sum = 0;
+                for (let i = 0; i < this.orders.length; i++) {
+                    if(this.orders[i].ticket.price != null && this.orders[i].ticket.price != ''){
+                        sum += this.orders[i].ticket.price;
+                    }
+                }
+                return sum;
+            },
+
+            //支付方法
+            topay(){
+                for (let i = 0; i < this.paying.length; i++) {
+                    axios.put('/PlaneTicket/user/orders/pay/'+this.paying[i]).then((res)=>{
+                        if(res.data){
+                            if(this.payingindex != -1){
+                                this.orders.splice(this.payingindex,1);
+                            }else{
+                                this.orders.splice(0,this.orders.length);
+                            }
+
+                            this.$message({
+                                message: '恭喜你，支付成功',
+                                type: 'success'
+                            });
+                            this.dialogVisibleZF = false;
+                        }else {
+                            this.$message.error('不好意思，支付失败了');
+                        }
+                    }).finally(()=>{
+                        if(this.orders.length == 0 || this.orders == null){
+                            this.active = 4;
+                        }
+                    });
+                }
+            },
+            //计算总价
+            priceSum(){
+                let sum = 0;
+                for (let i = 0; i < this.tks.length; i++) {
+                    if(this.tks[i].price != null && this.tks[i].price != ''){
+                        sum += this.tks[i].price;
+                    }
+                }
+                return sum;
+            },
+            //乘机人查询
+            psgSelectCondition(form){
+
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {
+                        axios.post('/PlaneTicket/user/passengers/mohu',this.formPasSelect).then((res)=>{
+                        this.psgtableData = res.data;
+                    });
+                    };
+                });
+            },
+            //重置按钮的js,实现输入框清空
+            Reset(){
+                this.formPasSelect.psName="";
+                this.formPasSelect.cardType="";
+                this.formPasSelect.idCard="";
+            },
+            //乘机人修改弹出按钮
+            psgEdit(row){
+                axios.get('/PlaneTicket/user/passengers/'+row.pid).then((res)=>{
+                   this.formEdit = res.data;
+                   this.dialogVisibleEdit = true;
+                });
+            },
+            //提交修改方法
+            definiteEdit(form){
+
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {
+                        axios.put('/PlaneTicket/user/passengers',this.formEdit).then((res)=>{
+                        this.psgtableData = res.data;
+                        this.dialogVisibleEdit = false;
+                            this.$message({
+                                message: '恭喜你，修改成功!',
+                                type: 'success'
+                            });
+                    })};
+                });
+            },
+            /*确定添加乘车人*/
+            addPassenger(form){
+                let _this=this;
+
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {
+                        axios({
+                        method: "Post",
+                        url: "http://localhost:8080/PlaneTicket/user/passengers",
+                        data:this.formAdd,
+                        contentType:'application/json;charset=uft-8'
+                    }).then(function (resp) {
+                        if(resp.data){
+                            _this.dialogVisibleAdd=false;
+                            _this.seletByUid();
+                            _this.$message({
+                                message: '恭喜你，添加成功!',
+                                type: 'success'
+                            });
+                        }
+                        else {
+                            _this.$message.error('用户已有该乘车人信息或输入信息错误!');
+                        }
+                    })};
+                });
+            },
+            /*查询当前用户乘车人信息*/
+            seletByUid(){
+                let _this=this;
+                axios({
+                    method: "get",
+                    url: "http://localhost:8080/PlaneTicket/user/passengers/seletByUid",
+                }).then(function (resp) {
+                    _this.psgtableData = resp.data;
+                })
+            },
+            /*删除乘车人*/
+            deletePassenger(row){
+                //页面加载完成后，发送异步请求，删除数据
+                this.$confirm('此操作将永久删除该乘机人, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'error'
+                }).then(() => {
+                    axios.delete('/PlaneTicket/user/passengers/'+row.pid).then((res)=>{
+                        if(res.data == true){
+                            this.$message({
+                                type: 'success',
+                                message: '删除成功!'
+                            });
+                            this.seletByUid();
+                        }else {
+                            this.$message.error('删除失败!');
+
+                        }
+                    })
+
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+
+
+            },
+            /*注册用户*/
+            register(form){
+                let _this=this;
+                this.$refs[form].validate((valid) => {
+                    if(valid==true) {axios({
+                        method: "post",
+                        url: "http://localhost:8080/PlaneTicket/user/users/add",
+                        xhrFields: {withCredentials: true}, crossDomain: true,
+                        data:_this.userForm,
+                        contentType:'application/json;charset=uft-8'
+                    }).then(function (resp) {
+                        if(resp.data) {
+                            _this.$message({
+                                message: '恭喜你，注册成功！',
+                                type: 'success'
+                            });
+                            _this.activeName="first";
+                            _this.userFormLogin.userName = _this.userForm.userName;
+                            _this.userForm = {};
+                        }
+                        else{
+                            _this.$message({
+                                message: '不好意思，账号重复！',
+                                type: 'warning'
+                            });
+                        }
+                    })};
+                });
+
+            },
+            /*退出登录*/
+            quit(){
+                let _this=this;
+                axios({
+                    method: "get",
+                    url: "http://localhost:8080/PlaneTicket/user/users/quit",
+                }).then(function (resp) {
+                    if(resp.data===true){
+                        _this.userStatus=false;
+                        _this.psgtableData=null;
+                        _this.userFormLogin.userName='';
+                        _this.userFormLogin.password='';
+                        _this.drawer=false;
+                        _this.$message({
+                            message: '成功退出！',
+                            type: 'success'
+                        });
+                    }
+                })
+            },
+        }
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kuaiyibu.mapper.AdviceMapper">
+
+    <resultMap id="adviceMap" type="advice">
+        <id property="aid" column="aid"/>
+        <result property="adviceType" column="advice_type"/>
+        <result property="adviceContent" column="advice_content"/>
+        <result property="phone" column="phone"/>
+        <result property="time" column="time"/>
+    </resultMap>
+
+    <select id="dySelect" parameterType="advice" resultMap="adviceMap">
+        select * from tb_advice where 1=1
+        <if test="adviceType!=null and adviceType!=''">
+            and advice_type like '%${adviceType}%'
+        </if>
+        <if test="adviceContent!=null and adviceContent!=''">
+            and advice_content like '%${adviceContent}%'
+        </if>
+        <if test="phone!=null and phone!=''">
+            and phone like '%${phone}%'
+        </if>
+
+
+    </select>
+
+</mapper>

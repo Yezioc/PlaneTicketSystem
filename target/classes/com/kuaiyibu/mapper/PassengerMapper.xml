@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kuaiyibu.mapper.PassengerMapper">
+
+    <resultMap id="passengerMap" type="passenger">
+        <id property="pid" column="pid"/>
+        <result property="psName" column="p_name"/>
+        <result property="cardType" column="card_type"/>
+        <result property="idCard" column="id_card"/>
+        <result property="uid" column="uid"/>
+    </resultMap>
+
+    <select id="dySelect" parameterType="passenger" resultMap="passengerMap">
+        select * from tb_passenger where uid=#{uid} and pdeleted='0'
+        <if test="psName!=null and psName!=''">
+            and p_name like '%${psName}%'
+        </if>
+        <if test="cardType!=null and cardType!=''">
+            and card_type like '%${cardType}%'
+        </if>
+        <if test="idCard!=null and idCard!=''">
+            and id_card like '%${idCard}%'
+        </if>
+
+    </select>
+
+    <select id="dySelect1" resultMap="passengerMap" parameterType="passenger">
+        select * from tb_passenger where 1=1
+        <if test="psName!=null and psName!=''">
+        and p_name like '%${psName}%'
+        </if>
+
+        <if test="cardType!=null and cardType!=''">and card_type like '%${cardType}%' </if>
+
+        <if test="idCard!=null and idCard!=''">and id_card like '%${idCard}%' </if>
+
+</select>
+
+</mapper>

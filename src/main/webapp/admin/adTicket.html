@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>快一步航班管理系统</title>
+    <link rel="icon" href="../img/logo.ico" type="image/x-icon">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        a {
+            color: #409eff;
+            text-decoration: none;
+        }
+
+        /*容器布局*/
+        .el-header {
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+
+        .el-main {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" style="display: flex;justify-content: center">
+    <div style="width: 1220px">
+        <!--头部-->
+        <el-header>
+            <p style="margin: 0;font-weight: bold;font-size: 25px">
+                快一步航班管理系统
+                <el-link type="primary" :underline="false" href="/PlaneTicket/admin">
+                    切换权限
+                </el-link>
+            </p>
+
+        </el-header>
+
+        <!--导航栏-->
+        <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-menu-item index="adTicket.html">航班管理</el-menu-item>
+            <el-menu-item index="adOrder.html">订单管理</el-menu-item>
+            <el-menu-item index="adSeat.html">座位管理</el-menu-item>
+            <el-menu-item index="adUser.html">用户管理</el-menu-item>
+            <el-menu-item index="adPassenger.html">乘机人管理</el-menu-item>
+            <el-menu-item index="adNotice.html">公告管理</el-menu-item>
+            <el-menu-item index="adAdvice.html">建议管理</el-menu-item>
+        </el-menu>
+
+        <!--tab-->
+        <el-tabs v-model="activeName" :tab-position="tabPosition" @tab-click="handleClick">
+
+            <!--第一页-->
+            <el-tab-pane name="first">
+                <el-tooltip slot="label" class="item" effect="dark" content="主页" placement="right" :open-delay="500">
+                    <i class="el-icon-house"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--条件查询-->
+                    <el-form :inline="true" :model="formSelect" class="demo-form-inline">
+
+                        <el-row>
+                            <el-form-item label="班次">
+                                <el-input v-model="formSelect.shift" clearable placeholder="班次"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发城市">
+                                <el-select v-model="formSelect.origin" clearable filterable placeholder="出发城市">
+                                    <el-option
+                                            v-for="str in originCity"
+                                            :label="str.origin"
+                                            :value="str.origin">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                            <el-form-item label="到达城市">
+                                <el-select v-model="formSelect.end" clearable filterable placeholder="到达城市">
+                                    <el-option
+                                            v-for="str in endCity"
+                                            :label="str.end"
+                                            :value="str.end">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                        </el-row>
+
+
+                        <el-row>
+                            <el-form-item label="日期">
+                                <el-input v-model="formSelect.date" clearable placeholder="日期"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发时间">
+                                <el-input v-model="formSelect.startTime" clearable placeholder="出发时间"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="到达时间">
+                                <el-input v-model="formSelect.endTime" clearable placeholder="到达时间"></el-input>
+                            </el-form-item>
+
+                        </el-row>
+
+                        <el-row>
+                            <el-form-item label="价格">
+                                <el-input v-model="formSelect.price" clearable placeholder="价格"></el-input>
+                            </el-form-item>
+
+                            <el-form-item style="margin-left: 30px">
+                                <el-button icon="el-icon-refresh-right" @click="selRes">重置</el-button>
+                                <el-button type="primary" @click="getByCondition" icon="el-icon-search">查询</el-button>
+                            </el-form-item>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                prop="shift"
+                                label="班次"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="origin"
+                                label="出发城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="end"
+                                label="到达城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="date"
+                                label="日期"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="startTime"
+                                label="出发时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="endTime"
+                                label="到达时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="price"
+                                label="价格"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                label="操作">
+                            <template slot-scope="scope">
+
+                                <el-button type="primary" icon="el-icon-edit" circle size="medium"
+                                           @click="edit(scope.row)"></el-button>
+
+                                <el-button slot="reference" type="danger" icon="el-icon-delete" circle size="medium"
+                                           @click="onDelete(scope.row)"></el-button>
+
+                            </template>
+
+                        </el-table-column>
+                    </el-table>
+
+                    <!--分页-->
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.currentPage"
+                            :page-sizes="[5,10, 20, 30, 50]"
+                            :page-size="pagination.pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="pagination.total">
+                    </el-pagination>
+
+                </el-main>
+
+            </el-tab-pane>
+
+            <!--第二页-->
+            <el-tab-pane name="second">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量添加" placement="right" :open-delay="500">
+                    <i class="el-icon-plus"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--添加表格-->
+                    <el-form :inline="true" ref="formAdd" :model="formAdd" class="demo-form-inline" :rules="formrules">
+
+                        <el-row>
+                            <el-form-item label="班次" prop="shift">
+                                <el-input v-model="formAdd.shift" clearable placeholder="班次"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发城市" prop="origin">
+                                <el-input v-model="formAdd.origin" clearable placeholder="出发城市"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="到达城市" prop="end">
+                                <el-input v-model="formAdd.end" clearable placeholder="到达城市"></el-input>
+                            </el-form-item>
+
+                        </el-row>
+
+
+                        <el-row>
+                            <el-form-item label="日期" prop="date">
+                                <el-date-picker
+                                        v-model="formAdd.date"
+                                        type="date"
+                                        placeholder="出发日期"
+                                        format="yyyy 年 MM 月 dd 日"
+                                        value-format="yyyy-MM-dd">
+                                </el-date-picker>
+                            </el-form-item>
+
+                            <el-form-item label="出发时间" prop="startTime">
+                                <el-time-picker
+                                        v-model="formAdd.startTime"
+                                        value-format="HH:mm"
+                                        format="HH:mm"
+                                        placeholder="出发时间">
+                                </el-time-picker>
+                            </el-form-item>
+
+                            <el-form-item label="到达时间" prop="endTime">
+                                <el-time-picker
+                                        v-model="formAdd.endTime"
+                                        value-format="HH:mm"
+                                        format="HH:mm"
+                                        placeholder="到达时间">
+                                </el-time-picker>
+                            </el-form-item>
+
+                        </el-row>
+
+                        <el-row>
+                            <el-form-item label="价格" prop="price">
+                                <el-input v-model="formAdd.price" clearable placeholder="价格"></el-input>
+                            </el-form-item>
+
+                            <el-form-item style="margin-left: 30px">
+                                <el-button icon="el-icon-refresh-right" @click="addRes">重置</el-button>
+                                <el-button type="success" @click="onAdd('formAdd')" icon="el-icon-plus">添加</el-button>
+                            </el-form-item>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                prop="shift"
+                                label="班次"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="origin"
+                                label="出发城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="end"
+                                label="到达城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="date"
+                                label="日期"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="startTime"
+                                label="出发时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="endTime"
+                                label="到达时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="price"
+                                label="价格"
+                                sortable>
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                label="操作">
+
+                            <template slot-scope="scope">
+
+                                <el-button type="primary" icon="el-icon-edit" circle size="medium"
+                                           @click="edit(scope.row)"></el-button>
+
+                                <el-button slot="reference" type="danger" icon="el-icon-delete" circle size="medium"
+                                           @click="onDelete(scope.row)"></el-button>
+
+                            </template>
+
+                        </el-table-column>
+                    </el-table>
+
+                    <!--分页-->
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.currentPage"
+                            :page-sizes="[5,10, 20, 30, 50]"
+                            :page-size="pagination.pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="pagination.total">
+                    </el-pagination>
+
+                    <!--                    <el-row>-->
+                    <!--                        <el-col :span="24"><div class="grid-content bg-purple-dark"></div></el-col>-->
+                    <!--                    </el-row>-->
+
+                </el-main>
+
+            </el-tab-pane>
+
+            <!--第三页-->
+            <el-tab-pane name="third">
+                <el-tooltip slot="label" class="item" effect="dark" content="批量删除" placement="right" :open-delay="500">
+                    <i class="el-icon-delete"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--条件查询-->
+                    <el-form :inline="true" :model="formSelect" class="demo-form-inline">
+
+                        <el-row>
+                            <el-form-item label="班次">
+                                <el-input v-model="formSelect.shift" clearable placeholder="班次"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发城市">
+                                <el-select v-model="formSelect.origin" clearable filterable placeholder="出发城市">
+                                    <el-option
+                                            v-for="str in originCity"
+                                            :label="str.origin"
+                                            :value="str.origin">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                            <el-form-item label="到达城市">
+                                <el-select v-model="formSelect.end" clearable filterable placeholder="到达城市">
+                                    <el-option
+                                            v-for="str in endCity"
+                                            :label="str.end"
+                                            :value="str.end">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                        </el-row>
+
+
+                        <el-row>
+                            <el-form-item label="日期">
+                                <el-input v-model="formSelect.date" clearable placeholder="日期"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发时间">
+                                <el-input v-model="formSelect.startTime" clearable placeholder="出发时间"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="到达时间">
+                                <el-input v-model="formSelect.endTime" clearable placeholder="到达时间"></el-input>
+                            </el-form-item>
+
+                        </el-row>
+
+                        <el-row>
+                            <el-form-item label="价格">
+                                <el-input v-model="formSelect.price" clearable placeholder="价格"></el-input>
+                            </el-form-item>
+
+                            <el-form-item style="margin-left: 30px">
+                                <el-button icon="el-icon-refresh-right">重置</el-button>
+                                <el-button type="primary" @click="getByCondition" icon="el-icon-search">查询</el-button>
+                                <el-button type="danger" plain round icon="el-icon-delete" @click="deleteSome"
+                                           style="margin-left: 20px">批量删除
+                                </el-button>
+                            </el-form-item>
+
+
+                        </el-row>
+
+                    </el-form>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="selection"
+                                width="55"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                prop="shift"
+                                label="班次"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="origin"
+                                label="出发城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="end"
+                                label="到达城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="date"
+                                label="日期"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="startTime"
+                                label="出发时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="endTime"
+                                label="到达时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="price"
+                                label="价格"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                align="center"
+                                label="操作">
+
+                            <template slot-scope="scope">
+
+                                <el-button type="primary" icon="el-icon-edit" circle size="medium"
+                                           @click="edit(scope.row)"></el-button>
+
+                                <el-button slot="reference" type="danger" icon="el-icon-delete" circle size="medium"
+                                           @click="onDelete(scope.row)"></el-button>
+
+                            </template>
+
+                        </el-table-column>
+                    </el-table>
+
+                    <!--分页-->
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.currentPage"
+                            :page-sizes="[5,10, 20, 30, 50]"
+                            :page-size="pagination.pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="pagination.total">
+                    </el-pagination>
+
+                </el-main>
+
+            </el-tab-pane>
+
+            <!--第四页-->
+            <el-tab-pane name="fourth">
+                <el-tooltip slot="label" class="item" effect="dark" content="高级设置" placement="right" :open-delay="500">
+                    <i class="el-icon-setting"></i>
+                </el-tooltip>
+
+                <!--一个main-->
+                <el-main>
+
+                    <!--条件查询-->
+                    <el-form :inline="true" :model="formSelect" class="demo-form-inline">
+
+                        <el-row>
+                            <el-form-item label="班次">
+                                <el-input v-model="formSelect.shift" clearable placeholder="班次"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发城市">
+                                <el-select v-model="formSelect.origin" clearable filterable placeholder="出发城市">
+                                    <el-option
+                                            v-for="str in originCity"
+                                            :label="str.origin"
+                                            :value="str.origin">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                            <el-form-item label="到达城市">
+                                <el-select v-model="formSelect.end" clearable filterable placeholder="到达城市">
+                                    <el-option
+                                            v-for="str in endCity"
+                                            :label="str.end"
+                                            :value="str.end">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                        </el-row>
+
+
+                        <el-row>
+                            <el-form-item label="日期">
+                                <el-input v-model="formSelect.date" clearable placeholder="日期"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="出发时间">
+                                <el-input v-model="formSelect.startTime" clearable placeholder="出发时间"></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="到达时间">
+                                <el-input v-model="formSelect.endTime" clearable placeholder="到达时间"></el-input>
+                            </el-form-item>
+
+                        </el-row>
+
+                        <el-row>
+                            <el-form-item label="价格">
+                                <el-input v-model="formSelect.price" clearable placeholder="价格"></el-input>
+                            </el-form-item>
+
+                            <el-form-item style="margin-left: 30px">
+                                <el-button icon="el-icon-refresh-right">重置</el-button>
+                                <el-button type="primary" @click="getByCondition" icon="el-icon-search">查询</el-button>
+                            </el-form-item>
+
+                        </el-row>
+
+                    </el-form>
+
+                    <!--操作按钮-->
+                    <el-row>
+                        <el-button type="danger" plain round icon="el-icon-delete" @click="deleteSome">批量删除</el-button>
+                        <el-button type="success" plain round icon="el-icon-plus" @click="opAdd">添加</el-button>
+                    </el-row>
+
+                    <!--表格-->
+                    <el-table
+                            :data="tableData"
+                            stripe
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+                        <el-table-column
+                                type="selection"
+                                width="55"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                type="index"
+                                width="50"
+                                align="center">
+                        </el-table-column>
+                        <el-table-column
+                                prop="shift"
+                                label="班次"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="origin"
+                                label="出发城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="end"
+                                label="到达城市"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="date"
+                                label="日期"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="startTime"
+                                label="出发时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="endTime"
+                                label="到达时间"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                prop="price"
+                                label="价格"
+                                sortable>
+                        </el-table-column>
+                        <el-table-column
+                                align="center"
+                                label="操作">
+
+                            <template slot-scope="scope">
+
+                                <el-button type="primary" icon="el-icon-edit" circle size="medium"
+                                           @click="edit(scope.row)"></el-button>
+
+                                <el-button slot="reference" type="danger" icon="el-icon-delete" circle size="medium"
+                                           @click="onDelete(scope.row)"></el-button>
+
+                            </template>
+
+                        </el-table-column>
+                    </el-table>
+
+                    <!--分页-->
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.currentPage"
+                            :page-sizes="[5,10, 20, 30, 50]"
+                            :page-size="pagination.pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="pagination.total">
+                    </el-pagination>
+
+                </el-main>
+
+            </el-tab-pane>
+
+        </el-tabs>
+
+        <!--添加弹窗-->
+        <el-dialog
+                title="添加"
+                :visible.sync="dialogVisibleAdd"
+                width="30%"
+                :before-close="handleCloseAdd">
+
+            <el-form ref="formAdd" :model="formAdd" :label-position="labelPosition" label-width="80px"
+                     :rules="formrules">
+
+                <el-form-item label="班次" prop="shift">
+                    <el-input v-model="formAdd.shift"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出发城市" prop="origin">
+                    <el-input v-model="formAdd.origin"></el-input>
+                </el-form-item>
+
+                <el-form-item label="到达城市" prop="end">
+                    <el-input v-model="formAdd.end"></el-input>
+                </el-form-item>
+
+                <el-form-item label="日期" prop="date">
+                    <el-input v-model="formAdd.date"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出发时间" prop="startTime">
+                    <el-input v-model="formAdd.startTime"></el-input>
+                </el-form-item>
+
+                <el-form-item label="到达时间" prop="endTime">
+                    <el-input v-model="formAdd.endTime"></el-input>
+                </el-form-item>
+
+                <el-form-item label="价格" prop="price">
+                    <el-input v-model="formAdd.price"></el-input>
+                </el-form-item>
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="closeAdd">取 消</el-button>
+                    <el-button type="primary" @click="onAdd('formAdd')">确 定</el-button>
+            </span>
+
+        </el-dialog>
+
+
+        <!--编辑弹窗-->
+        <el-dialog
+                title="编辑"
+                :visible.sync="dialogVisibleEdit"
+                width="30%"
+                style="margin-top: 30px"
+                :before-close="handleCloseEdit">
+
+            <el-form ref="formEdit" :model="formEdit" :label-position="labelPosition" label-width="80px"
+                     :rules="formrules">
+
+                <el-form-item label="班次" prop="shift">
+                    <el-input v-model="formEdit.shift"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出发城市" prop="origin">
+                    <el-input v-model="formEdit.origin"></el-input>
+                </el-form-item>
+
+                <el-form-item label="到达城市" prop="end">
+                    <el-input v-model="formEdit.end"></el-input>
+                </el-form-item>
+
+                <el-form-item label="日期" prop="date">
+                    <el-input v-model="formEdit.date"></el-input>
+                </el-form-item>
+
+                <el-form-item label="出发时间" prop="startTime">
+                    <el-input v-model="formEdit.startTime"></el-input>
+                </el-form-item>
+
+                <el-form-item label="到达时间" prop="endTime">
+                    <el-input v-model="formEdit.endTime"></el-input>
+                </el-form-item>
+
+                <el-form-item label="价格" prop="price">
+                    <el-input v-model="formEdit.price"></el-input>
+                </el-form-item>
+
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisibleEdit = false">取 消</el-button>
+                    <el-button type="primary" @click="subUpdate('formEdit')">确 定</el-button>
+            </span>
+
+        </el-dialog>
+
+    </div>
+
+</div>
+
+<script src="../js/axios-0.18.0.js"></script>
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            // tab默认选择
+            activeName: 'first',
+            // tab位置
+            tabPosition: 'left',
+            // 导航栏默认选择
+            activeIndex: 'adTicket.html',
+            // 分页的
+            pagination: {
+                currentPage: 1,//当前页码
+                pageSize: 5,//每页显示的记录数
+                total: 0,//总记录数
+            },
+            // 添加弹窗状态
+            dialogVisibleAdd: false,
+            // 编辑弹窗状态
+            dialogVisibleEdit: false,
+            // 表格数据
+            tableData: [],
+            // 条件查询数据
+            formSelect: {
+                tid: '',
+                shift: '',
+                origin: '',
+                end: '',
+                date: '',
+                startTime: '',
+                endTime: '',
+                price: ''
+            },
+            formSelected: {
+                tid: '',
+                shift: '',
+                origin: '',
+                end: '',
+                date: '',
+                startTime: '',
+                endTime: '',
+                price: ''
+            },
+            // 添加弹窗数据
+            formAdd: {
+                tid: '',
+                shift: '',
+                origin: '',
+                end: '',
+                date: '',
+                startTime: '',
+                endTime: '',
+                price: ''
+            },
+            // 编辑弹窗数据
+            formEdit: {
+                tid: '',
+                shift: '',
+                origin: '',
+                end: '',
+                date: '',
+                startTime: '',
+                endTime: '',
+                price: ''
+            },
+            formrules: {
+                shift: [
+                    {required: true, message: '请输入班次', trigger: 'blur'},
+                    {pattern: /^[A-Z]{2}\d{5}$/, message: "班次格式错误(形如:RW12342)", trigger: "blur"},
+                ],
+                origin: [
+                    {required: true, message: '请输入出发城市', trigger: 'blur'},
+                    {pattern: /[\u4e00-\u9fa5]/, message: "地点名要为中文", trigger: "blur"},
+                ],
+                end: [
+                    {required: true, message: '请输入到达城市', trigger: 'blur'},
+                    {pattern: /[\u4e00-\u9fa5]/, message: "地点名要为中文", trigger: "blur"},
+                ],
+                date: [
+                    {required: true, message: '请输入日期', trigger: 'blur'},
+                    {pattern: /^202[2-9]-(1[0-2]|0[1-9])-[0-9]{2}$/, message: "日期格式类似:2020-12-12", trigger: "blur"},
+                    {max: 10, message: '长度为10位', trigger: 'blur'}
+                ],
+                startTime: [
+                    {required: true, message: '请输入起始时间', trigger: 'blur'},
+                    {pattern: /^[0-2][0-9]:[0-6][0-9]$/, message: "请输入时间格式类似:12:12", trigger: "blur"},
+                ],
+                endTime: [
+                    {required: true, message: '请输入抵达时间', trigger: 'blur'},
+                    {pattern: /^[0-2][0-9]:[0-6][0-9]$/, message: "请输入时间格式类似:12:12", trigger: "blur"},
+                ],
+                price: [
+                    {required: true, message: '请输入价格', trigger: 'blur'},
+                    {pattern: /^0$|^[1-9]\d*$/, message: "请输入数字", trigger: "blur"},
+                ],
+
+            },
+            // 添加弹窗的表单对齐方式
+            labelPosition: 'right',
+            //出发城市数据
+            originCity: [],
+            //到达城市数据
+            endCity: [],
+            //复选框数组
+            multipleSelection: [],
+            //选择id数组
+            selectIds: [],
+        },
+        created() {
+            this.getAll();
+            this.getOriginCity();
+            this.getEndCity();
+        },
+        methods: {
+            //获取出发城市
+            getOriginCity() {
+                axios.get('/PlaneTicket/admin/tickets/city/origin').then((res) => {
+                    this.originCity = res.data;
+                });
+            },
+            //获取到达城市
+            getEndCity() {
+                axios.get('/PlaneTicket/admin/tickets/city/end').then((res) => {
+                    this.endCity = res.data;
+                });
+            },
+            //查询所有
+            getAll() {
+                // axios.get('/PlaneTicket/admin/tickets').then((res)=>{
+                //     this.tableData = res.data;
+                // });
+                let param = "?tid=" + this.formSelected.tid;
+                param += "&shift=" + this.formSelected.shift;
+                param += "&origin=" + this.formSelected.origin;
+                param += "&end=" + this.formSelected.end;
+                param += "&date=" + this.formSelected.date;
+                param += "&startTime=" + this.formSelected.startTime;
+                param += "&endTime=" + this.formSelected.endTime;
+                param += "&price=" + this.formSelected.price;
+                axios.get('/PlaneTicket/admin/tickets/' + this.pagination.currentPage + '/' + this.pagination.pageSize + param).then((res) => {
+                    this.pagination.pageSize = res.data.size;
+                    this.pagination.currentPage = res.data.current;
+                    this.pagination.total = res.data.total;
+                    this.tableData = res.data.records;
+                });
+            },
+            //编辑按钮
+            edit(row) {
+                axios.get('/PlaneTicket/admin/tickets/' + row.tid).then((res) => {
+                    if (res.data == null || res.data == '') {
+                        this.$message.error('不好意思，获取数据失败，自动刷新!');
+                    } else {
+                        res.data.startTime = res.data.startTime.substr(0,5)
+                        res.data.endTime = res.data.endTime.substr(0,5)
+                        this.formEdit = res.data;
+                        this.dialogVisibleEdit = true;
+                    }
+                }).finally(() => {
+                    this.getAll();
+                });
+            },
+            //提交更新
+            subUpdate(form) {
+                this.$refs[form].validate((valid) => {
+                    if (valid == true) {
+                        axios.put('/PlaneTicket/admin/tickets', this.formEdit).then((res) => {
+                            if (res.data == true) {
+                                this.$message({
+                                    message: '恭喜你，修改成功!',
+                                    type: 'success'
+                                });
+                            } else {
+                                this.$message.error('不好意思，修改失败!');
+                            }
+                        }).finally(() => {
+                            this.dialogVisibleEdit = false;
+                            this.getAll();
+                        });
+                    }
+                    ;
+                });
+
+            },
+            //删除单个
+            onDelete(row) {
+                this.$confirm('您确定要永久删除此机票信息吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.delete('/PlaneTicket/admin/tickets/' + row.tid).then((res) => {
+                        if (res.data == true) {
+                            this.$message({
+                                message: '恭喜你，删除成功!',
+                                type: 'success'
+                            });
+                        } else {
+                            this.$message.error('不好意思，删除失败!');
+                        }
+                    }).finally(() => {
+                        this.getAll();
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            //批量删除
+            deleteSome() {
+                this.$confirm('您确定要永久删除此机票信息吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    for (let i = 0; i < this.multipleSelection.length; i++) {
+                        this.selectIds[i] = this.multipleSelection[i].tid;
+                    }
+                    axios.delete('/PlaneTicket/admin/tickets', {
+                        data: this.selectIds
+                    }).then((res) => {
+                        if (res.data == true) {
+                            this.$message({
+                                message: '恭喜你，删除成功!',
+                                type: 'success'
+                            });
+                        } else {
+                            this.$message.error('不好意思，删除失败!');
+                        }
+                    }).finally(() => {
+                        this.getAll();
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+
+            },
+            // tab的点击事件
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            // 表格的批量选择
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            // 条件查询提交按钮
+            getByCondition() {
+                // let param = "?tid="+this.formSelect.tid;
+                // param += "&shift="+this.formSelect.shift;
+                // param += "&origin="+this.formSelect.origin;
+                // param += "&end="+this.formSelect.end;
+                // param += "&date="+this.formSelect.date;
+                // param += "&startTime="+this.formSelect.startTime;
+                // param += "&endTime="+this.formSelect.endTime;
+                // param += "&price="+this.formSelect.price;
+                // console.log('/PlaneTicket/admin/tickets/gbc' + param);
+                // axios.get('/PlaneTicket/admin/tickets/gbc' + param).then((res)=>{
+                //     this.tableData =  res.data;
+                // });
+                this.formSelected = JSON.parse(JSON.stringify(this.formSelect));
+                this.getAll();
+            },
+            // 导航栏选择方法
+            handleSelect(routePath) {
+                location.href = routePath;
+            },
+            // 添加弹窗关闭事件
+            handleCloseAdd(done) {
+                this.formAdd = {};
+                done();
+            },
+            // 修改弹窗关闭事件
+            handleCloseEdit(done) {
+                done();
+            },
+            // 分页的
+            handleSizeChange(val) {
+                this.pagination.pageSize = val;
+                this.pagination.currentPage = 1;
+                this.getAll();
+            },
+            handleCurrentChange(val) {
+                this.pagination.currentPage = val;
+                this.getAll();
+            },
+            //批量添加方法
+            onAdd(form) {
+                this.$refs[form].validate((valid) => {
+                    if (valid == true) {
+                        axios.post('/PlaneTicket/admin/tickets', this.formAdd).then((res) => {
+                            if (res.data != null && res.data > 0) {
+                                axios.post('/PlaneTicket/admin/tickets/addSeat/' + res.data).then((res) => {
+                                    if (res.data == true) {
+                                        this.$message({
+                                            message: '恭喜你，添加成功!',
+                                            type: 'success'
+                                        });
+                                    } else {
+                                        this.$message.error('不好意思，座位生成失败，请联系座位管理员解决!');
+                                    }
+                                });
+                                this.dialogVisibleAdd = false;
+                            } else {
+                                this.$message.error('不好意思输入格式或数据有误，添加失败!');
+                            }
+                        }).finally(() => {
+                            this.getAll();
+                        });
+                    }
+                    ;
+                });
+
+            },
+            //添加重置按钮
+            addRes() {
+                this.formAdd = {};
+            },
+            //添加重置按钮
+            selRes() {
+                this.formSelect = {
+                    tid: '',
+                    shift: '',
+                    origin: '',
+                    end: '',
+                    date: '',
+                    startTime: '',
+                    endTime: '',
+                    price: ''
+                };
+            },
+            //弹窗添加方法
+            opAdd() {
+                this.formAdd = {};
+                this.dialogVisibleAdd = true
+            },
+            //关闭添加弹窗方法
+            closeAdd() {
+                this.dialogVisibleAdd = false;
+                this.formAdd = {};
+            }
+        }
+    })
+</script>
+</body>
+</html>
